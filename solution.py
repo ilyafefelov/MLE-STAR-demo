@@ -205,7 +205,7 @@ class MLESTARPipeline:
     
     def advanced_feature_engineering(self):
         """
-        Perform generic feature engineering for the real churn dataset
+        Perform generic feature engineering for real dataset
         """
         self.log_process("Feature Engineering", "Starting generic feature engineering for real dataset")
         df_fe = self.df.copy()
@@ -220,6 +220,13 @@ class MLESTARPipeline:
         # Handle missing numeric values
         numeric_cols = df_fe.select_dtypes(include=[np.number]).columns.tolist()
         df_fe[numeric_cols] = df_fe[numeric_cols].fillna(df_fe[numeric_cols].median())
+
+        # Create interaction features based on previous ablation study
+        if 'Customer service calls' in df_fe.columns and 'Total day charge' in df_fe.columns:
+            df_fe['service_calls_x_day_charge'] = df_fe['Customer service calls'] * df_fe['Total day charge']
+        
+        if 'International plan' in df_fe.columns and 'Total intl charge' in df_fe.columns:
+            df_fe['intl_plan_x_charge'] = df_fe['International plan'] * df_fe['Total intl charge']
 
         self.engineered_df = df_fe
         feature_count = len([c for c in df_fe.columns if c != self.target_column])
@@ -358,34 +365,42 @@ class MLESTARPipeline:
         
         # Candidate 1: Random Forest with tuning
         rf_params = {
-            'n_estimators': [100, 200],
-            'max_depth': [10, 20, None],
-            'min_samples_split': [2, 5]
+            'n_estimators': [100, 200, 300],
+            'max_depth': [10, 20, 30, None],
+            'min_samples_split': [2, 5, 10],
+            'min_samples_leaf': [1, 2, 4],
+            'bootstrap': [True, False]
         }
         
         rf = RandomForestClassifier(random_state=42)
-        rf_grid = GridSearchCV(rf, rf_params, cv=3, scoring='f1', n_jobs=-1)
-        rf_grid.fit(X_train, y_train)
+        rf_random = RandomizedSearchCV(rf, rf_params, n_iter=50, cv=3, scoring='f1', n_jobs=-1, random_state=42)
+        rf_random.fit(X_train, y_train)
         
-        rf_pred = rf_grid.predict(X_test)
+        rf_pred = rf_random.predict(X_test)
         rf_score = f1_score(y_test, rf_pred)
         
         candidates.append({
             'name': 'Tuned Random Forest',
-            'model': rf_grid.best_estimator_,
+            'model': rf_random.best_estimator_,
             'score': rf_score,
             'predictions': rf_pred
         })
         
-        # Candidate 2: Gradient Boosting
-        gb = GradientBoostingClassifier(random_state=42, n_estimators=100)
-        gb.fit(X_train, y_train)
-        gb_pred = gb.predict(X_test)
+        # Candidate 2: Gradient Boosting with tuning
+        gb_params = {
+            'n_estimators': [100, 200, 300],
+            'learning_rate': [0.01, 0.1, 0.2],
+            'max_depth': [3, 5, 7]
+        }
+        gb = GradientBoostingClassifier(random_state=42)
+        gb_grid = GridSearchCV(gb, gb_params, cv=3, scoring='f1', n_jobs=-1)
+        gb_grid.fit(X_train, y_train)
+        gb_pred = gb_grid.predict(X_test)
         gb_score = f1_score(y_test, gb_pred)
         
         candidates.append({
-            'name': 'Gradient Boosting',
-            'model': gb,
+            'name': 'Tuned Gradient Boosting',
+            'model': gb_grid.best_estimator_,
             'score': gb_score,
             'predictions': gb_pred
         })
@@ -408,28 +423,41 @@ class MLESTARPipeline:
         
         # Candidate 4: XGBoost (if available)
         if XGBOOST_AVAILABLE:
+            xgb_params = {
+                'n_estimators': [100, 200, 500],
+                'learning_rate': [0.01, 0.1, 0.2],
+                'max_depth': [3, 5, 7],
+                'subsample': [0.7, 0.8, 0.9]
+            }
             xgb = XGBClassifier(random_state=42, eval_metric='logloss')
-            xgb.fit(X_train, y_train)
-            xgb_pred = xgb.predict(X_test)
+            xgb_random = RandomizedSearchCV(xgb, xgb_params, n_iter=20, cv=3, scoring='f1', n_jobs=-1, random_state=42)
+            xgb_random.fit(X_train, y_train)
+            xgb_pred = xgb_random.predict(X_test)
             xgb_score = f1_score(y_test, xgb_pred)
             
             candidates.append({
-                'name': 'XGBoost',
-                'model': xgb,
+                'name': 'Tuned XGBoost',
+                'model': xgb_random.best_estimator_,
                 'score': xgb_score,
                 'predictions': xgb_pred
             })
 
         # Candidate 5: CatBoost (if available)
         if CATBOOST_AVAILABLE:
+            cat_params = {
+                'iterations': [200, 500],
+                'learning_rate': [0.01, 0.1],
+                'depth': [4, 6, 8]
+            }
             cat = CatBoostClassifier(random_state=42, verbose=0)
-            cat.fit(X_train, y_train)
-            cat_pred = cat.predict(X_test)
+            cat_grid = GridSearchCV(cat, cat_params, cv=3, scoring='f1', n_jobs=-1)
+            cat_grid.fit(X_train, y_train)
+            cat_pred = cat_grid.predict(X_test)
             cat_score = f1_score(y_test, cat_pred)
             
             candidates.append({
-                'name': 'CatBoost',
-                'model': cat,
+                'name': 'Tuned CatBoost',
+                'model': cat_grid.best_estimator_,
                 'score': cat_score,
                 'predictions': cat_pred
             })
@@ -457,13 +485,22 @@ class MLESTARPipeline:
         voting_score = f1_score(y_test, voting_pred)
         
         # Weighted ensemble based on performance
-        weights = [c['score'] for c in candidates]
-        weighted_voting_clf = VotingClassifier(estimators=estimators, voting='soft', weights=weights)
-        weighted_voting_clf.fit(X_train, y_train)
+        weights = [c['score']**2 for c in candidates] # Squaring weights to give more importance to better models
         
-        weighted_pred = weighted_voting_clf.predict(X_test)
-        weighted_score = f1_score(y_test, weighted_pred)
-        
+        # Exclude models with very low scores from soft voting
+        soft_voting_estimators = [(c['name'], c['model']) for c in candidates if c['score'] > 0.2 and hasattr(c['model'], 'predict_proba')]
+        soft_voting_weights = [c['score']**2 for c in candidates if c['score'] > 0.2 and hasattr(c['model'], 'predict_proba')]
+
+        if soft_voting_estimators:
+            weighted_voting_clf = VotingClassifier(estimators=soft_voting_estimators, voting='soft', weights=soft_voting_weights)
+            weighted_voting_clf.fit(X_train, y_train)
+            
+            weighted_pred = weighted_voting_clf.predict(X_test)
+            weighted_score = f1_score(y_test, weighted_pred)
+        else:
+            weighted_voting_clf = None
+            weighted_score = 0
+
         ensemble_results = {
             'voting_ensemble': {
                 'model': voting_clf,
@@ -696,6 +733,13 @@ Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         # Handle missing numeric values
         numeric_cols = df_fe.select_dtypes(include=[np.number]).columns.tolist()
         df_fe[numeric_cols] = df_fe[numeric_cols].fillna(df_fe[numeric_cols].median())
+
+        # Create interaction features based on previous ablation study
+        if 'Customer service calls' in df_fe.columns and 'Total day charge' in df_fe.columns:
+            df_fe['service_calls_x_day_charge'] = df_fe['Customer service calls'] * df_fe['Total day charge']
+        
+        if 'International plan' in df_fe.columns and 'Total intl charge' in df_fe.columns:
+            df_fe['intl_plan_x_charge'] = df_fe['International plan'] * df_fe['Total intl charge']
 
         self.engineered_df = df_fe
         feature_count = len([c for c in df_fe.columns if c != self.target_column])

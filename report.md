@@ -1,19 +1,19 @@
 # MLE-STAR Churn Prediction Model Report
 
-Generated on: 2025-08-04 10:34:31
+Generated on: 2025-08-04 10:41:18
 
 ## Model Performance Summary
 
 ### Primary Metrics
-- **F1-Score**: 0.8382
+- **F1-Score**: 0.8406
 - **Accuracy**: 0.9588
-- **Precision**: 0.9828
-- **Recall**: 0.7308
+- **Precision**: 0.9667
+- **Recall**: 0.7436
 
 ### Confusion Matrix
 ```
-[[455   1]
- [ 21  57]]
+[[454   2]
+ [ 20  58]]
 ```
 
 ### Classification Report
@@ -21,10 +21,10 @@ Generated on: 2025-08-04 10:34:31
               precision    recall  f1-score   support
 
        False       0.96      1.00      0.98       456
-        True       0.98      0.73      0.84        78
+        True       0.97      0.74      0.84        78
 
     accuracy                           0.96       534
-   macro avg       0.97      0.86      0.91       534
+   macro avg       0.96      0.87      0.91       534
 weighted avg       0.96      0.96      0.96       534
 
 ```
@@ -34,7 +34,7 @@ weighted avg       0.96      0.96      0.96       534
 - **Target Distribution**: {False: np.int64(2278), True: np.int64(388)}
 
 ## Feature Engineering
-- **Features Created**: 19
+- **Features Created**: 21
 
 ## Model Details
 - **Final Model Type**: VotingClassifier
@@ -44,8 +44,8 @@ weighted avg       0.96      0.96      0.96       534
 ### Data Leakage: ✓ No issues detected
 
 ## Candidate Model Comparison
-- **Tuned Random Forest**: F1-Score = 0.8120
-- **Gradient Boosting**: F1-Score = 0.7910
-- **Tuned Logistic Regression**: F1-Score = 0.1942
-- **XGBoost**: F1-Score = 0.8286
-- **CatBoost**: F1-Score = 0.8382
+- **Tuned Random Forest**: F1-Score = 0.8148
+- **Tuned Gradient Boosting**: F1-Score = 0.7917
+- **Tuned Logistic Regression**: F1-Score = 0.4480
+- **Tuned XGBoost**: F1-Score = 0.8201
+- **Tuned CatBoost**: F1-Score = 0.8321

@@ -1,19 +1,19 @@
 # MLE-STAR Process Log
 
-Generated on: 2025-08-04 10:34:31
+Generated on: 2025-08-04 10:41:18
 
 ## Iterative Process Steps
 
-### Pipeline Start (2025-08-04 10:33:57)
+### Pipeline Start (2025-08-04 10:39:38)
 Initiating MLE-STAR agentic pipeline
 
-### Web Search Analysis (2025-08-04 10:33:57)
+### Web Search Analysis (2025-08-04 10:39:38)
 Analyzing state-of-the-art approaches for churn prediction
 
-### Data Loading (2025-08-04 10:33:57)
+### Data Loading (2025-08-04 10:39:38)
 Loading data from data/churn-bigml-80.csv
 
-### Data Analysis (2025-08-04 10:33:57)
+### Data Analysis (2025-08-04 10:39:38)
 Basic data exploration completed
 
 **Metrics:**
@@ -21,74 +21,74 @@ Basic data exploration completed
 - missing_values: 0
 - target_distribution: {False: 2278, True: 388}
 
-### Feature Engineering (2025-08-04 10:33:57)
+### Feature Engineering (2025-08-04 10:39:38)
 Starting generic feature engineering for real dataset
 
-### Feature Engineering (2025-08-04 10:33:57)
-Created 19 features
+### Feature Engineering (2025-08-04 10:39:38)
+Created 21 features
 
 **Metrics:**
-- feature_count: 19
+- feature_count: 21
 
-### Data Leakage Check (2025-08-04 10:33:57)
+### Data Leakage Check (2025-08-04 10:39:38)
 No data leakage issues detected
 
-### Component Refinement (2025-08-04 10:33:57)
+### Component Refinement (2025-08-04 10:39:38)
 Starting targeted refinement of ML components
 
-### Component Refinement (2025-08-04 10:34:02)
+### Component Refinement (2025-08-04 10:39:44)
 Completed component refinement
 
 **Metrics:**
-- best_scaler: {'name': 'standard', 'score': np.float64(0.24347826086956523)}
-- best_feature_selector: {'name': 'selectkbest_15', 'score': np.float64(0.24778761061946902)}
+- best_scaler: {'name': 'standard', 'score': np.float64(0.43902439024390244)}
+- best_feature_selector: {'name': 'selectkbest_15', 'score': np.float64(0.42276422764227645)}
 
-### Model Generation (2025-08-04 10:34:02)
+### Model Generation (2025-08-04 10:39:44)
 Generating candidate models
 
-### Model Generation (2025-08-04 10:34:17)
+### Model Generation (2025-08-04 10:41:07)
 Generated 5 candidate models
 
 **Metrics:**
-- Tuned Random Forest: 0.8120300751879699
-- Gradient Boosting: 0.7910447761194029
-- Tuned Logistic Regression: 0.1941747572815534
-- XGBoost: 0.8285714285714286
-- CatBoost: 0.8382352941176471
+- Tuned Random Forest: 0.8148148148148148
+- Tuned Gradient Boosting: 0.7916666666666666
+- Tuned Logistic Regression: 0.448
+- Tuned XGBoost: 0.8201438848920863
+- Tuned CatBoost: 0.8321167883211679
 
-### Ensemble Strategy (2025-08-04 10:34:17)
+### Ensemble Strategy (2025-08-04 10:41:07)
 Creating ensemble from candidate models
 
-### Ensemble Strategy (2025-08-04 10:34:28)
+### Ensemble Strategy (2025-08-04 10:41:15)
 Best ensemble: weighted_ensemble
 
 **Metrics:**
-- voting_score: 0.8120300751879699
-- weighted_score: 0.8382352941176471
+- voting_score: 0.8321167883211679
+- weighted_score: 0.8405797101449275
 
-### Ablation Study (2025-08-04 10:34:28)
+### Ablation Study (2025-08-04 10:41:15)
 Analyzing component importance
 
-### Ablation Study (2025-08-04 10:34:31)
+### Ablation Study (2025-08-04 10:41:18)
 Completed ablation analysis
 
 **Metrics:**
-- baseline_score: 0.803030303030303
-- without_Total day minutes: 0.8
-- without_Total day charge: 0.803030303030303
-- without_Customer service calls: 0.6776859504132231
-- without_International plan: 0.6446280991735537
-- without_Total eve minutes: 0.8
+- baseline_score: 0.8270676691729323
+- without_Total day minutes: 0.8059701492537313
+- without_Total day charge: 0.765625
+- without_Customer service calls: 0.6942148760330579
+- without_intl_plan_x_charge: 0.803030303030303
+- without_Total eve minutes: 0.7692307692307693
 
-### Final Evaluation (2025-08-04 10:34:31)
+### Final Evaluation (2025-08-04 10:41:18)
 Pipeline completed successfully
 
 **Metrics:**
-- f1_score: 0.8382352941176471
+- f1_score: 0.8405797101449275
 - accuracy: 0.9588014981273408
-- precision: 0.9827586206896551
-- recall: 0.7307692307692307
+- precision: 0.9666666666666667
+- recall: 0.7435897435897436
 
-### Report Generation (2025-08-04 10:34:31)
+### Report Generation (2025-08-04 10:41:18)
 Generated comprehensive performance report
 
