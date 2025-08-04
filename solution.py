@@ -74,9 +74,13 @@ class MLESTARPipeline:
     - Robustness checking and validation
     """
     
-    def __init__(self, data_path='data/churn-bigml-80.csv', target_column='Churn'):
+    def __init__(self, data_path='data/churn-bigml-80.csv', target_column='Churn', history_path='run_history.csv'):
         self.data_path = data_path
         self.target_column = target_column
+        self.history_path = history_path
+        self.run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.report_path = f'report_{self.run_timestamp}.md'
+        self.log_path = f'process_log_{self.run_timestamp}.md'
         self.process_log = []
         self.candidate_models = []
         self.best_model = None
@@ -627,10 +631,10 @@ Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
             report_content += f"- **{candidate['name']}**: F1-Score = {candidate['score']:.4f}\n"
         
         # Save report
-        with open('report.md', 'w') as f:
+        with open(self.report_path, 'w') as f:
             f.write(report_content)
         
-        self.log_process("Report Generation", "Generated comprehensive performance report")
+        self.log_process("Report Generation", f"Generated comprehensive performance report at {self.report_path}")
     
     def save_process_log(self):
         """
@@ -651,10 +655,10 @@ Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
                     log_content += f"- {key}: {value}\n"
                 log_content += "\n"
         
-        with open('process_log.md', 'w') as f:
+        with open(self.log_path, 'w') as f:
             f.write(log_content)
         
-        print(f"Process log saved with {len(self.process_log)} entries")
+        print(f"Process log saved to {self.log_path} with {len(self.process_log)} entries")
     
     def run_pipeline(self):
         """
@@ -703,6 +707,7 @@ Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         # Step 11: Generate reports
         self.generate_report(best_ensemble['model'], final_metrics, y_test, y_pred)
         self.save_process_log()
+        self.update_run_history(final_metrics)
         
         # Store final results
         self.best_model = best_ensemble['model']
@@ -711,41 +716,20 @@ Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         print(f"\n🎯 MLE-STAR Pipeline Complete!")
         print(f"📊 Best F1-Score: {final_metrics['f1_score']:.4f}")
         print(f"📈 Model Accuracy: {final_metrics['accuracy']:.4f}")
-        print(f"📝 Reports saved: report.md, process_log.md")
+        print(f"📝 Reports saved: {self.report_path}, {self.log_path}")
+        print(f"📋 Run history updated: {self.history_path}")
         
         return True
 
-
-    def advanced_feature_engineering(self):
+    def update_run_history(self, metrics):
         """
-        Perform generic feature engineering for real dataset
+        Update a CSV file with the history of all runs.
         """
-        self.log_process("Feature Engineering", "Starting generic feature engineering for real dataset")
-        df_fe = self.df.copy()
-
-        # Label encode all categorical columns except target
-        categorical_cols = df_fe.select_dtypes(include=['object']).columns
-        for col in categorical_cols:
-            if col != self.target_column:
-                le = LabelEncoder()
-                df_fe[col] = le.fit_transform(df_fe[col].astype(str))
-
-        # Handle missing numeric values
-        numeric_cols = df_fe.select_dtypes(include=[np.number]).columns.tolist()
-        df_fe[numeric_cols] = df_fe[numeric_cols].fillna(df_fe[numeric_cols].median())
-
-        # Create interaction features based on previous ablation study
-        if 'Customer service calls' in df_fe.columns and 'Total day charge' in df_fe.columns:
-            df_fe['service_calls_x_day_charge'] = df_fe['Customer service calls'] * df_fe['Total day charge']
-        
-        if 'International plan' in df_fe.columns and 'Total intl charge' in df_fe.columns:
-            df_fe['intl_plan_x_charge'] = df_fe['International plan'] * df_fe['Total intl charge']
-
-        self.engineered_df = df_fe
-        feature_count = len([c for c in df_fe.columns if c != self.target_column])
-        self.log_process("Feature Engineering", f"Created {feature_count} features", {'feature_count': feature_count})
-        return df_fe
-
+        history_df = pd.DataFrame([{'timestamp': self.run_timestamp, **metrics}])
+        if os.path.exists(self.history_path):
+            history_df.to_csv(self.history_path, mode='a', header=False, index=False)
+        else:
+            history_df.to_csv(self.history_path, index=False)
 
 def main():
     """
