@@ -78,6 +78,7 @@ class MLESTARPipeline:
         self.data_path = data_path
         self.target_column = target_column
         self.history_path = history_path
+        self.dataset_name = os.path.basename(data_path)
         self.run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.report_path = f'report_{self.run_timestamp}.md'
         self.log_path = f'process_log_{self.run_timestamp}.md'
@@ -145,8 +146,13 @@ class MLESTARPipeline:
                 'preprocessing': ['auto_feature_encoding']
             }
         }
-
         self.sota_approaches = sota_approaches
+        # Log the web search results in the process log
+        self.log_process(
+            "Web Search Results",
+            "MLE-STAR web search identified the following approaches:",
+            metrics={k: v['description'] for k, v in sota_approaches.items()}
+        )
         return sota_approaches
     
     def data_leakage_checker(self, X_train, X_test, y_train, y_test):
@@ -707,7 +713,16 @@ Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         # Step 11: Generate reports
         self.generate_report(best_ensemble['model'], final_metrics, y_test, y_pred)
         self.save_process_log()
-        self.update_run_history(final_metrics)
+        
+        # Consolidate info for history
+        history_info = {
+            **final_metrics,
+            'dataset_name': self.dataset_name,
+            'final_model': type(best_ensemble['model']).__name__,
+            'best_scaler': refinement_results.get('best_scaler', {}).get('name', 'N/A'),
+            'best_feature_selector': refinement_results.get('best_feature_selector', {}).get('name', 'N/A')
+        }
+        self.update_run_history(history_info)
         
         # Store final results
         self.best_model = best_ensemble['model']
@@ -721,11 +736,17 @@ Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         
         return True
 
-    def update_run_history(self, metrics):
+    def update_run_history(self, history_info):
         """
         Update a CSV file with the history of all runs.
         """
-        history_df = pd.DataFrame([{'timestamp': self.run_timestamp, **metrics}])
+        history_df = pd.DataFrame([{'timestamp': self.run_timestamp, **history_info}])
+        
+        # Reorder columns for clarity
+        cols = ['timestamp', 'dataset_name', 'f1_score', 'accuracy', 'precision', 'recall', 
+                'final_model', 'best_scaler', 'best_feature_selector']
+        history_df = history_df[cols]
+
         if os.path.exists(self.history_path):
             history_df.to_csv(self.history_path, mode='a', header=False, index=False)
         else:
