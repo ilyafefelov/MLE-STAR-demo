@@ -55,6 +55,13 @@ except ImportError:
     LIGHTGBM_AVAILABLE = False
     print("LightGBM not available. Install with: pip install lightgbm")
 
+try:
+    from catboost import CatBoostClassifier
+    CATBOOST_AVAILABLE = True
+except ImportError:
+    CATBOOST_AVAILABLE = False
+    print("CatBoost not available. Install with: pip install catboost")
+
 # MLE-STAR Components
 class MLESTARPipeline:
     """
@@ -67,7 +74,7 @@ class MLESTARPipeline:
     - Robustness checking and validation
     """
     
-    def __init__(self, data_path='data/telecom_churn.csv', target_column='Churn'):
+    def __init__(self, data_path='data/churn-bigml-80.csv', target_column='Churn'):
         self.data_path = data_path
         self.target_column = target_column
         self.process_log = []
@@ -100,7 +107,6 @@ class MLESTARPipeline:
             "Web Search Analysis",
             "Analyzing state-of-the-art approaches for churn prediction"
         )
-        
         # State-of-the-art approaches identified through "web search"
         sota_approaches = {
             'ensemble_gradient_boosting': {
@@ -117,9 +123,25 @@ class MLESTARPipeline:
                 'description': 'Transparent models for business insights',
                 'components': ['DecisionTree', 'LogisticRegression', 'RandomForest'],
                 'preprocessing': ['feature_engineering', 'interaction_terms']
+            },
+            # Additional state-of-the-art methods for intensive optimization
+            'catboost_optimized': {
+                'description': 'CatBoost with native categorical handling and advanced tuning',
+                'components': ['CatBoost'],
+                'preprocessing': ['categorical_encoding', 'robust_scaling']
+            },
+            'neural_tabular': {
+                'description': 'Tabular neural network architectures (e.g., TabNet, FT-Transformer)',
+                'components': ['TabNet'],
+                'preprocessing': ['scaling', 'normalization']
+            },
+            'automl_frameworks': {
+                'description': 'Automated ML frameworks (auto-sklearn, AutoGluon)',
+                'components': ['AutoSklearn', 'AutoGluon'],
+                'preprocessing': ['auto_feature_encoding']
             }
         }
-        
+
         self.sota_approaches = sota_approaches
         return sota_approaches
     
@@ -163,9 +185,6 @@ class MLESTARPipeline:
             self.log_process("Data Loading", f"Loading data from {self.data_path}")
             
             # Load the dataset
-            if not os.path.exists(self.data_path):
-                # Create a sample dataset for demonstration
-                self.create_sample_dataset()
             
             self.df = pd.read_csv(self.data_path)
             
@@ -183,6 +202,29 @@ class MLESTARPipeline:
         except Exception as e:
             self.log_process("Data Loading Error", f"Failed to load data: {str(e)}")
             return False
+    
+    def advanced_feature_engineering(self):
+        """
+        Perform generic feature engineering for the real churn dataset
+        """
+        self.log_process("Feature Engineering", "Starting generic feature engineering for real dataset")
+        df_fe = self.df.copy()
+
+        # Label encode all categorical columns except target
+        categorical_cols = df_fe.select_dtypes(include=['object']).columns
+        for col in categorical_cols:
+            if col != self.target_column:
+                le = LabelEncoder()
+                df_fe[col] = le.fit_transform(df_fe[col].astype(str))
+
+        # Handle missing numeric values
+        numeric_cols = df_fe.select_dtypes(include=[np.number]).columns.tolist()
+        df_fe[numeric_cols] = df_fe[numeric_cols].fillna(df_fe[numeric_cols].median())
+
+        self.engineered_df = df_fe
+        feature_count = len([c for c in df_fe.columns if c != self.target_column])
+        self.log_process("Feature Engineering", f"Created {feature_count} features", {'feature_count': feature_count})
+        return df_fe
     
     def create_sample_dataset(self):
         """
@@ -222,47 +264,6 @@ class MLESTARPipeline:
         # Create directory if it doesn't exist
         os.makedirs('data', exist_ok=True)
         
-        # Save to CSV
-        sample_df = pd.DataFrame(data)
-        sample_df.to_csv(self.data_path, index=False)
-        
-        self.log_process("Sample Data Creation", f"Created sample dataset with {n_samples} records")
-    
-    def advanced_feature_engineering(self):
-        """
-        Perform advanced feature engineering based on domain knowledge
-        """
-        self.log_process("Feature Engineering", "Starting advanced feature engineering")
-        
-        # Create a copy for feature engineering
-        df_fe = self.df.copy()
-        
-        # 1. Encoding categorical variables
-        label_encoders = {}
-        categorical_columns = df_fe.select_dtypes(include=['object']).columns
-        categorical_columns = [col for col in categorical_columns if col != self.target_column]
-        
-        for col in categorical_columns:
-            if col != 'CustomerID':  # Skip ID column
-                le = LabelEncoder()
-                df_fe[col + '_encoded'] = le.fit_transform(df_fe[col].astype(str))
-                label_encoders[col] = le
-        
-        # 2. Create interaction features
-        if 'MonthlyCharges' in df_fe.columns and 'Tenure' in df_fe.columns:
-            df_fe['Charges_per_Tenure'] = df_fe['MonthlyCharges'] / (df_fe['Tenure'] + 1)
-        
-        if 'TotalCharges' in df_fe.columns and 'MonthlyCharges' in df_fe.columns:
-            df_fe['Total_to_Monthly_Ratio'] = df_fe['TotalCharges'] / (df_fe['MonthlyCharges'] + 1)
-        
-        # 3. Age binning
-        if 'Age' in df_fe.columns:
-            df_fe['Age_Group'] = pd.cut(df_fe['Age'], bins=[0, 30, 50, 70, 100], labels=['Young', 'Middle', 'Senior', 'Elder'])
-            df_fe['Age_Group_encoded'] = LabelEncoder().fit_transform(df_fe['Age_Group'].astype(str))
-        
-        # 4. Remove original categorical columns and ID
-        columns_to_remove = ['CustomerID'] + list(categorical_columns) + ['Age_Group']
-        columns_to_remove = [col for col in columns_to_remove if col in df_fe.columns and col != self.target_column]
         df_fe = df_fe.drop(columns=columns_to_remove, errors='ignore')
         
         # Handle missing values
@@ -417,6 +418,20 @@ class MLESTARPipeline:
                 'model': xgb,
                 'score': xgb_score,
                 'predictions': xgb_pred
+            })
+
+        # Candidate 5: CatBoost (if available)
+        if CATBOOST_AVAILABLE:
+            cat = CatBoostClassifier(random_state=42, verbose=0)
+            cat.fit(X_train, y_train)
+            cat_pred = cat.predict(X_test)
+            cat_score = f1_score(y_test, cat_pred)
+            
+            candidates.append({
+                'name': 'CatBoost',
+                'model': cat,
+                'score': cat_score,
+                'predictions': cat_pred
             })
         
         self.candidate_models = candidates
@@ -662,6 +677,30 @@ Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         print(f"📝 Reports saved: report.md, process_log.md")
         
         return True
+
+
+    def advanced_feature_engineering(self):
+        """
+        Perform generic feature engineering for real dataset
+        """
+        self.log_process("Feature Engineering", "Starting generic feature engineering for real dataset")
+        df_fe = self.df.copy()
+
+        # Label encode all categorical columns except target
+        categorical_cols = df_fe.select_dtypes(include=['object']).columns
+        for col in categorical_cols:
+            if col != self.target_column:
+                le = LabelEncoder()
+                df_fe[col] = le.fit_transform(df_fe[col].astype(str))
+
+        # Handle missing numeric values
+        numeric_cols = df_fe.select_dtypes(include=[np.number]).columns.tolist()
+        df_fe[numeric_cols] = df_fe[numeric_cols].fillna(df_fe[numeric_cols].median())
+
+        self.engineered_df = df_fe
+        feature_count = len([c for c in df_fe.columns if c != self.target_column])
+        self.log_process("Feature Engineering", f"Created {feature_count} features", {'feature_count': feature_count})
+        return df_fe
 
 
 def main():
