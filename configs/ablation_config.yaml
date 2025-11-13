@@ -1,0 +1,134 @@
+# Конфігурація для абляційного аналізу ML-конвеєра
+# Формат: YAML
+
+# Налаштування датасету
+dataset:
+  # Вбудовані датасети: breast_cancer, wine, digits, iris
+  # Для власного CSV використовуйте name: custom
+  name: breast_cancer
+  
+  # Для custom датасету
+  csv_path: null
+  target_column: null
+  
+  # Розбивка train/test
+  test_size: 0.2
+  random_state: 42
+
+# Налаштування експерименту
+experiment:
+  # Кількість повторів для кожної конфігурації
+  n_runs: 5
+  
+  # Рівень значущості для статистичних тестів
+  alpha: 0.05
+  
+  # Використовувати поправку Бонферроні
+  bonferroni_correction: true
+
+# Конфігурації для абляційного аналізу
+# Кожна конфігурація визначає, які компоненти увімкнені
+configurations:
+  - name: baseline
+    description: "Базова логістична регресія без препроцесингу"
+    use_scaling: false
+    use_feature_engineering: false
+    use_hyperparam_tuning: false
+    use_ensembling: false
+    model_type: logistic
+    
+  - name: with_scaling
+    description: "Логістична регресія + масштабування"
+    use_scaling: true
+    scaler_type: standard
+    use_feature_engineering: false
+    use_hyperparam_tuning: false
+    use_ensembling: false
+    model_type: logistic
+    
+  - name: with_scaling_minmax
+    description: "Логістична регресія + MinMax масштабування"
+    use_scaling: true
+    scaler_type: minmax
+    use_feature_engineering: false
+    use_hyperparam_tuning: false
+    use_ensembling: false
+    model_type: logistic
+    
+  - name: with_feature_eng
+    description: "Логістична регресія + масштабування + інженерія ознак"
+    use_scaling: true
+    scaler_type: standard
+    use_feature_engineering: true
+    use_hyperparam_tuning: false
+    use_ensembling: false
+    model_type: logistic
+    
+  - name: with_tuning
+    description: "Логістична регресія + масштабування + тюнінг"
+    use_scaling: true
+    scaler_type: standard
+    use_feature_engineering: false
+    use_hyperparam_tuning: true
+    use_ensembling: false
+    model_type: logistic
+    
+  - name: full_pipeline
+    description: "Повний конвеєр: всі компоненти"
+    use_scaling: true
+    scaler_type: standard
+    use_feature_engineering: true
+    use_hyperparam_tuning: true
+    use_ensembling: false
+    model_type: logistic
+    
+  - name: random_forest
+    description: "Random Forest + масштабування"
+    use_scaling: true
+    scaler_type: standard
+    use_feature_engineering: false
+    use_hyperparam_tuning: false
+    use_ensembling: false
+    model_type: random_forest
+    
+  - name: gradient_boosting
+    description: "Gradient Boosting + масштабування"
+    use_scaling: true
+    scaler_type: standard
+    use_feature_engineering: false
+    use_hyperparam_tuning: false
+    use_ensembling: false
+    model_type: gradient_boosting
+    
+  - name: ensemble
+    description: "Енсамбль моделей + масштабування"
+    use_scaling: true
+    scaler_type: standard
+    use_feature_engineering: false
+    use_hyperparam_tuning: false
+    use_ensembling: true
+    model_type: logistic  # не використовується при ensembling
+
+# Налаштування виводу
+output:
+  # Директорія для збереження результатів
+  results_dir: results
+  
+  # Створювати графіки
+  create_plots: true
+  
+  # Формати збереження
+  save_csv: true
+  save_json: true
+  
+  # Детальний вивід у консоль
+  verbose: false
+
+# Метрики для аналізу
+metrics:
+  primary: accuracy  # Основна метрика для порівняння
+  secondary:
+    - f1_score
+    - precision
+    - recall
+    - roc_auc

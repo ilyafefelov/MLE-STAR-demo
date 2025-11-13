@@ -1,0 +1,315 @@
+#!/usr/bin/env python
+"""
+Основний скрипт для запуску абляційних експериментів.
+"""
+
+import argparse
+import sys
+import time
+import json
+from pathlib import Path
+import numpy as np
+import pandas as pd
+from datetime import datetime
+
+# Додаємо src до шляху
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from src.mle_star_ablation.config import get_standard_configs
+from src.mle_star_ablation.mle_star_generated_pipeline import build_pipeline
+from src.mle_star_ablation.datasets import DatasetLoader
+from src.mle_star_ablation.metrics import calculate_classification_metrics
+from src.mle_star_ablation.stats import (
+    generate_statistical_report,
+    pairwise_comparison,
+    summarize_statistics
+)
+from src.mle_star_ablation.viz import create_all_plots
+
+
+def run_single_experiment(config, X_train, X_test, y_train, y_test, random_state=42):
+    """
+    Запускає один експеримент з заданою конфігурацією.
+    
+    Args:
+        config: AblationConfig
+        X_train, X_test, y_train, y_test: Дані
+        random_state: Seed (не використовується, бо random_state вже в Gemini pipeline)
+        
+    Returns:
+        dict: Результати експерименту
+    """
+    pipeline = build_pipeline(config)
+    
+    start_time = time.time()
+    pipeline.fit(X_train, y_train)
+    train_time = time.time() - start_time
+    
+    # Передбачення
+    y_pred = pipeline.predict(X_test)
+    
+    # Ймовірності (якщо доступні)
+    try:
+        y_proba = pipeline.predict_proba(X_test)
+    except:
+        y_proba = None
+    
+    # Обчислення метрик
+    metrics = calculate_classification_metrics(y_test, y_pred, y_proba)
+    metrics['train_time'] = train_time
+    
+    return metrics
+
+
+def run_multiple_runs(config, dataset_name, csv_path, target_column, n_runs=5):
+    """
+    Запускає кілька повторів експерименту з різними seed.
+    
+    Args:
+        config: AblationConfig
+        dataset_name: Назва датасету
+        csv_path: Шлях до CSV
+        target_column: Цільова колонка
+        n_runs: Кількість повторів
+        
+    Returns:
+        dict: Результати всіх повторів
+    """
+    all_results = []
+    
+    for run_idx in range(n_runs):
+        random_state = 42 + run_idx
+        
+        # Завантажуємо дані з новим seed
+        X_train, X_test, y_train, y_test = DatasetLoader.load_dataset(
+            dataset_name=dataset_name,
+            csv_path=csv_path,
+            target_column=target_column,
+            random_state=random_state
+        )
+        
+        # Запускаємо експеримент
+        metrics = run_single_experiment(
+            config, X_train, X_test, y_train, y_test, random_state
+        )
+        
+        metrics['run'] = run_idx + 1
+        metrics['random_state'] = random_state
+        all_results.append(metrics)
+    
+    return all_results
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Запуск абляційного аналізу ML-конвеєра',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    
+    # Параметри датасету
+    parser.add_argument(
+        '--dataset',
+        type=str,
+        default='breast_cancer',
+        help='Назва датасету (breast_cancer, wine, digits, iris) або custom'
+    )
+    parser.add_argument(
+        '--csv-path',
+        type=str,
+        default=None,
+        help='Шлях до CSV файлу (для dataset=custom)'
+    )
+    parser.add_argument(
+        '--target',
+        type=str,
+        default=None,
+        help='Назва цільової колонки (для CSV)'
+    )
+    
+    # Параметри експерименту
+    parser.add_argument(
+        '--n-runs',
+        type=int,
+        default=5,
+        help='Кількість повторів кожної конфігурації'
+    )
+    parser.add_argument(
+        '--config',
+        type=str,
+        default=None,
+        help='Шлях до YAML конфігурації (опціонально)'
+    )
+    
+    # Параметри виводу
+    parser.add_argument(
+        '--output-dir',
+        type=str,
+        default='results',
+        help='Директорія для збереження результатів'
+    )
+    parser.add_argument(
+        '--no-plots',
+        action='store_true',
+        help='Не створювати графіки'
+    )
+    parser.add_argument(
+        '--verbose',
+        action='store_true',
+        help='Детальний вивід'
+    )
+    
+    args = parser.parse_args()
+    
+    # Створення директорії для результатів
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(exist_ok=True, parents=True)
+    
+    # Виведення інформації про датасет
+    print("="*70)
+    print("ABLATION ANALYSIS: MLE-STAR ML PIPELINE")
+    print("="*70)
+    print(f"\nDataset: {args.dataset}")
+    if args.csv_path:
+        print(f"CSV Path: {args.csv_path}")
+        print(f"Target Column: {args.target}")
+    print(f"Number of runs per config: {args.n_runs}")
+    print(f"Output directory: {args.output_dir}")
+    print()
+    
+    # Інформація про датасет
+    try:
+        dataset_info = DatasetLoader.get_dataset_info(
+            args.dataset, args.csv_path, args.target
+        )
+        print(f"Dataset info:")
+        print(f"  - Samples: {dataset_info['n_samples']}")
+        print(f"  - Features: {dataset_info['n_features']}")
+        print(f"  - Classes: {dataset_info['n_classes']}")
+        print(f"  - Train/Test: {dataset_info['train_size']}/{dataset_info['test_size']}")
+        print()
+    except Exception as e:
+        print(f"Warning: Could not load dataset info: {e}")
+        print()
+    
+    # Генерація конфігурацій
+    configs = get_standard_configs()
+    print(f"Running {len(configs)} configurations...")
+    print()
+    
+    # Запуск експериментів
+    all_results = {}
+    experiment_start = time.time()
+    
+    for idx, config in enumerate(configs, 1):
+        config_name = config.get_name()
+        print(f"[{idx}/{len(configs)}] Running: {config_name}")
+        
+        if args.verbose:
+            print(f"  Config: {config.to_dict()}")
+        
+        try:
+            results = run_multiple_runs(
+                config,
+                args.dataset,
+                args.csv_path,
+                args.target,
+                args.n_runs
+            )
+            
+            # Збереження результатів
+            all_results[config_name] = results
+            
+            # Виведення середніх значень
+            avg_accuracy = np.mean([r['accuracy'] for r in results])
+            avg_f1 = np.mean([r['f1_score'] for r in results])
+            avg_time = np.mean([r['train_time'] for r in results])
+            
+            print(f"  → Accuracy: {avg_accuracy:.4f}, F1: {avg_f1:.4f}, Time: {avg_time:.2f}s")
+            
+        except Exception as e:
+            print(f"  ✗ Error: {e}")
+            if args.verbose:
+                import traceback
+                traceback.print_exc()
+        
+        print()
+    
+    total_time = time.time() - experiment_start
+    print(f"Total experiment time: {total_time:.2f}s ({total_time/60:.1f} min)")
+    print()
+    
+    # Збереження детальних результатів
+    print("Saving detailed results...")
+    detailed_results = []
+    for config_name, results in all_results.items():
+        for result in results:
+            result['configuration'] = config_name
+            detailed_results.append(result)
+    
+    df_detailed = pd.DataFrame(detailed_results)
+    csv_path = output_dir / f"detailed_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    df_detailed.to_csv(csv_path, index=False)
+    print(f"  → {csv_path}")
+    
+    # Збереження підсумкової статистики
+    print("\nCalculating summary statistics...")
+    results_dict = {
+        config_name: np.array([r['accuracy'] for r in results])
+        for config_name, results in all_results.items()
+    }
+    
+    summary_df = summarize_statistics(results_dict)
+    summary_path = output_dir / f"summary_statistics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    summary_df.to_csv(summary_path, index=False)
+    print(f"  → {summary_path}")
+    
+    # Статистичний аналіз
+    print("\nPerforming statistical analysis...")
+    stat_report = generate_statistical_report(results_dict, alpha=0.05)
+    print(stat_report)
+    
+    # Збереження статистичного звіту
+    report_path = output_dir / f"statistical_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+    with open(report_path, 'w', encoding='utf-8') as f:
+        f.write(stat_report)
+    print(f"Statistical report saved to: {report_path}")
+    
+    # Попарні порівняння
+    if len(results_dict) >= 2:
+        print("\nPerforming pairwise comparisons...")
+        comparison_df = pairwise_comparison(results_dict, alpha=0.05)
+        comparison_path = output_dir / f"pairwise_comparisons_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        comparison_df.to_csv(comparison_path, index=False)
+        print(f"  → {comparison_path}")
+    else:
+        comparison_df = None
+    
+    # Візуалізація
+    if not args.no_plots:
+        print("\nGenerating plots...")
+        try:
+            create_all_plots(
+                results_dict,
+                comparison_df,
+                output_dir=str(output_dir),
+                metric_name='Accuracy'
+            )
+        except Exception as e:
+            print(f"Warning: Could not create plots: {e}")
+    
+    # Підсумок
+    print("\n" + "="*70)
+    print("ABLATION ANALYSIS COMPLETED")
+    print("="*70)
+    print(f"\nBest configuration:")
+    best_config = summary_df.iloc[0]
+    print(f"  {best_config['configuration']}")
+    print(f"  Mean Accuracy: {best_config['mean']:.4f} ± {best_config['std']:.4f}")
+    print(f"  95% CI: [{best_config['ci_lower']:.4f}, {best_config['ci_upper']:.4f}]")
+    print()
+    print(f"All results saved to: {output_dir}")
+    print("="*70)
+
+
+if __name__ == "__main__":
+    main()
