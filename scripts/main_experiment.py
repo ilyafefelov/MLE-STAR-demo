@@ -203,7 +203,7 @@ def update_mle_star_pipeline(code: str, dataset_name: str):
     
     # Знаходимо секцію build_full_pipeline
     start_marker = "def build_full_pipeline("
-    end_marker = "\n\n# ==== 2. НАЗВИ КРОКІВ"
+    end_marker = "\n\n# ==== 2. КОНФІГУРАЦІЯ НАЗВ КРОКІВ"
     
     start_idx = content.find(start_marker)
     end_idx = content.find(end_marker)
@@ -418,13 +418,16 @@ def main():
     summary_path = output_dir / "summary_all_datasets.csv"
     summary_df.to_csv(summary_path, index=False)
     
-    print(f"\n📊 Summary statistics:")
-    print(summary_df.pivot_table(
-        values='mean_accuracy',
-        index='configuration',
-        columns='dataset',
-        aggfunc='mean'
-    ))
+    if len(summary_df) > 0:
+        print(f"\n📊 Summary statistics:")
+        print(summary_df.pivot_table(
+            values='mean_accuracy',
+            index='configuration',
+            columns='dataset',
+            aggfunc='mean'
+        ))
+    else:
+        print(f"\n⚠️  No results to summarize (all experiments failed)")
     
     print(f"\n✅ All results saved to: {args.output_dir}")
     print(f"   Summary: {summary_path}")

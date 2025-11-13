@@ -42,65 +42,140 @@ def build_full_pipeline(
     categorical_features: Optional[List[str]] = None
 ) -> Pipeline:
     """
-    Повертає повний ML-конвеєр, згенерований Gemini API для breast_cancer.
+    Повертає повний ML-конвеєр, згенерований Gemini API для iris.
     
     Pipeline складається з:
     1. Preprocessor: SimpleImputer + StandardScaler
-    2. Feature Engineering: PCA (95% variance)
-    3. Model: LogisticRegression
+    2. Feature Engineering: (визначено Gemini)
+    3. Model: (визначено Gemini)
     
-    Згенеровано: Google Gemini 2.5 Flash
-    Датасет: breast_cancer (569 samples, 30 features, 2 classes)
+    Згенеровано: Google Gemini 2.0 Flash Exp
+    Датасет: iris
+    Дата: 2025-11-13 13:25:59
     
     Returns:
         Pipeline: Повний sklearn Pipeline з усіма компонентами
     """
-    # Preprocessing steps:
-    # 1. SimpleImputer: Fills in any missing values using the mean strategy.
-    #    Although the breast cancer dataset is typically clean, this step adds robustness
-    #    for general use cases where missing data might occur.
-    # 2. StandardScaler: Scales features to have a mean of 0 and a standard deviation of 1.
-    #    This is crucial for many machine learning algorithms, especially those
-    #    based on distance or gradient descent (like Logistic Regression and PCA).
+"""
+    Builds a complete scikit-learn ML pipeline for the Iris dataset.
+
+    The pipeline includes preprocessing, feature engineering, and a classification model.
+
+    Dataset Characteristics:
+    - Samples: 150
+    - Features: 4
+    - Classes: 3
+    - Task: Classification
+
+    Model Selection Rationale:
+    The Iris dataset is a classic benchmark dataset known for its relatively clean data and
+    linearly separable nature (especially between classes 0 and 1, and 1 and 2).
+    However, the boundary between class 0 and class 2 can be slightly non-linear.
+    Given the small dataset size (150 samples) and low feature count (4), simpler models
+    can often perform very well without overfitting.
+
+    - LogisticRegression: While good for linearly separable data, it might struggle
+      slightly with the mild non-linearity between some classes.
+    - SVC with RBF kernel: Excellent for complex decision boundaries and can handle
+      non-linearity well. However, with a small dataset and relatively simple structure,
+      it might be prone to overfitting or require careful hyperparameter tuning.
+    - MLPClassifier: A powerful model capable of learning complex patterns. For this
+      small, low-dimensional dataset, it's likely overkill and highly prone to
+      overfitting if not heavily regularized. Training can also be slower.
+    - GradientBoostingClassifier: A powerful ensemble method that often achieves high
+      accuracy. It can be susceptible to overfitting on small datasets if not tuned
+      properly.
+
+    - RandomForestClassifier: This is chosen as the "BEST" model for this dataset
+      because it offers a good balance.
+        - Robustness: It's generally robust to outliers and doesn't assume a specific
+          data distribution.
+        - Non-linearity: It can naturally handle non-linear relationships between
+          features and the target variable.
+        - Overfitting: With appropriate hyperparameters (like `max_depth`), it can
+          effectively control overfitting on smaller datasets.
+        - Interpretability (relative): While not as interpretable as a single decision
+          tree, the concept of ensemble of trees provides some level of understanding.
+        - Dataset Size Influence: For a dataset of 150 samples, a Random Forest with
+          controlled depth is less likely to overfit than a highly flexible SVC or an
+          MLP. It's more powerful than Logistic Regression for potential mild non-linearities.
+
+    Hyperparameter Selection:
+    - n_estimators=100: A common starting point for the number of trees. More trees
+      generally lead to better performance but also increase computation. 100 is usually
+      sufficient for this dataset to stabilize performance.
+    - max_depth=5: This is a crucial hyperparameter for controlling overfitting on small
+      datasets. Limiting the depth of individual trees prevents them from learning the
+      noise in the data. Given the low dimensionality, trees don't need to be excessively deep.
+      A depth of 5 is a reasonable starting point that balances model complexity and
+      generalization for Iris.
+    - random_state=42: Ensures reproducibility of the model's training process.
+
+    Feature Engineering Choice (PCA):
+    - PCA(n_components=0.95): Principal Component Analysis is used for dimensionality
+      reduction. Setting `n_components` to 0.95 means we keep enough principal components
+      to explain 95% of the variance in the data. With only 4 features, PCA might not
+      be strictly necessary for this dataset to achieve good performance, but it's a
+      sophisticated technique that can be beneficial if features are highly correlated
+      or if we were dealing with more features. For Iris, it can slightly regularize
+      and potentially speed up training without significant loss of information.
+      An alternative could be to use all 4 components (e.g., `n_components=4`) if
+      variance explained wasn't a concern, or even omit PCA if it doesn't improve
+      results significantly.
+
+    Expected Performance Characteristics:
+    - High accuracy is expected, likely in the 95-99% range on test data.
+    - The model should generalize well due to the choice of RandomForest and controlled
+      `max_depth`, and the presence of PCA.
+    - Training time should be relatively fast given the dataset size.
+
+    Returns:
+        sklearn.pipeline.Pipeline: The configured scikit-learn pipeline.
+    """
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.impute import SimpleImputer
+    from sklearn.decomposition import PCA
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.feature_selection import SelectKBest, chi2
+    from sklearn.preprocessing import PolynomialFeatures # Example for more complex feature engineering
+
+    # Preprocessing: Handle missing values and scale features.
+    # SimpleImputer is used as a robust first step, though Iris typically has no missing values.
+    # StandardScaler is essential for distance-based algorithms and gradient-based optimizers.
     preprocessor = Pipeline([
         ('imputer', SimpleImputer(strategy='mean')),
         ('scaler', StandardScaler())
     ])
-    
-    # Feature Engineering steps:
-    # 1. PCA (Principal Component Analysis): Reduces the dimensionality of the dataset.
-    #    It transforms the features into a new set of orthogonal components that capture
-    #    the most variance in the data. `n_components=0.95` means it will select the
-    #    minimum number of components required to explain 95% of the variance.
-    #    This helps to mitigate multicollinearity, reduce noise, and potentially prevent overfitting,
-    #    especially with 30 original features.
+
+    # Feature Engineering: Dimensionality reduction.
+    # PCA aims to capture the most variance with fewer components.
+    # Keeping 95% of variance is a common heuristic. For Iris, it might reduce to 2 or 3 components.
+    # An alternative could be SelectKBest with chi2 if we wanted to select the most relevant features directly.
+    # PolynomialFeatures could be used for non-linear relationships but might overfit the small Iris dataset.
     feature_engineering = Pipeline([
         ('pca', PCA(n_components=0.95, random_state=42))
     ])
-    
-    # Model:
-    # 1. LogisticRegression: A robust and widely used linear model for binary classification.
-    #    It's a strong baseline, interpretable, and performs very well on this dataset
-    #    when features are properly scaled and potentially decorrelated by PCA.
-    #    The 'liblinear' solver is efficient for small datasets and supports L1/L2 regularization.
-    #    `max_iter` is increased to ensure convergence, and `random_state` for reproducibility.
-    model = LogisticRegression(random_state=42, solver='liblinear', max_iter=1000)
-    
-    # Combine all steps into a single sklearn.pipeline.Pipeline
-    return Pipeline([
+
+    # Model: RandomForestClassifier
+    # Chosen due to its robustness, ability to handle non-linearities, and good generalization
+    # on small to medium datasets like Iris when hyperparameters are set appropriately.
+    # - n_estimators=100: A good balance between performance and computation.
+    # - max_depth=5: Controls overfitting on the small dataset. Individual trees are not allowed to grow too deep.
+    # - random_state=42: Ensures reproducibility.
+    model = RandomForestClassifier(
+        n_estimators=100,
+        max_depth=5,
+        random_state=42
+    )
+
+    # Combine all steps into a single pipeline.
+    full_pipeline = Pipeline([
         ('preprocessor', preprocessor),
         ('feature_engineering', feature_engineering),
-        ('model', model),
+        ('model', model)
     ])
-    
-    # Фінальний pipeline
-    full_pipeline = Pipeline(steps=[
-        ('scaler', scaler),
-        ('feature_engineering', feature_engineering),
-        ('feature_selection', feature_selection),
-        ('model', model),
-    ])
-    
+
     return full_pipeline
 
 
