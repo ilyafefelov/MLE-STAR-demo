@@ -229,16 +229,18 @@ def main():
         print("❌ Error: GEMINI_API_KEY not set!")
         return
     
-    # Моделі для тестування (реальні доступні моделі)
+    # Моделі для тестування (доступні у вашому paid tier)
     models = [
-        "gemini-2.0-flash-exp",              # Експериментальна (безкоштовна, швидка)
-        "gemini-2.5-flash",                  # Нова стабільна Flash
-        "gemini-2.5-pro",                    # Найрозумніша Pro версія
-        "gemini-2.0-flash-thinking-exp",     # З reasoning capabilities
+        "gemini-2.5-flash-lite",             # Найшвидша (15 RPM, 3K TPM)
+        "gemini-2.5-flash",                  # Збалансована (10 RPM, 1.48K TPM)
+        "gemini-2.5-pro",                    # Найрозумніша (2 RPM, 394 TPM)
     ]
     
-    print(f"\n💡 Note: Testing with 65s delay between models due to rate limits")
-    print(f"   Total test time: ~4-5 minutes\n")
+    print(f"\n💡 Testing with paid tier limits:")
+    print(f"   - gemini-2.5-flash-lite: 15 RPM (fastest)")
+    print(f"   - gemini-2.5-flash: 10 RPM (balanced)")
+    print(f"   - gemini-2.5-pro: 2 RPM (smartest)")
+    print(f"   Total test time: ~2-3 minutes with delays\n")
     
     print("="*80)
     print("GEMINI MODEL COMPARISON FOR ML PIPELINE GENERATION")
@@ -292,10 +294,12 @@ def main():
         
         print(f"   Saved to: {code_file}")
         
-        # Пауза між запитами (60 секунд для rate limit)
+        # Пауза між запитами (враховуємо різні ліміти)
         if model_name != models[-1]:  # Не чекаємо після останньої моделі
-            print(f"   ⏳ Waiting 65 seconds (rate limit)...")
-            time.sleep(65)
+            # gemini-2.5-pro має найменший ліміт (2 RPM = 30s між запитами)
+            wait_time = 35 if "pro" in model_name else 10
+            print(f"   ⏳ Waiting {wait_time} seconds (rate limit)...")
+            time.sleep(wait_time)
     
     # Підсумкова таблиця
     print(f"\n{'='*80}")

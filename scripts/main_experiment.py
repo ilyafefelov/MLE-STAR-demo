@@ -42,9 +42,9 @@ def generate_pipeline_with_gemini(dataset_name: str, api_key: str) -> str:
     Returns:
         str: Згенерований Python код pipeline
     """
-    # Конфігурація Gemini
+    # Конфігурація Gemini - використовуємо найшвидшу модель з paid tier
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.0-flash-exp")
+    model = genai.GenerativeModel("gemini-2.5-flash-lite")
     
     # Отримання інформації про датасет
     dataset_info = DatasetLoader.get_dataset_info(dataset_name)
@@ -62,16 +62,23 @@ Dataset Information:
 Requirements:
 1. Create a Pipeline with these steps:
    - 'preprocessor': Handle missing values and scaling (Pipeline with SimpleImputer + StandardScaler)
-   - 'feature_engineering': Optional dimensionality reduction (e.g., PCA)
-   - 'model': Classification model (LogisticRegression, RandomForest, SVC, etc.)
+   - 'feature_engineering': Dimensionality reduction or feature extraction (PCA, SelectKBest, PolynomialFeatures, etc.)
+   - 'model': Choose the BEST classification model for this dataset from:
+     * LogisticRegression (good for linearly separable data)
+     * RandomForestClassifier (robust, handles non-linearity well)
+     * SVC with RBF kernel (excellent for complex decision boundaries)
+     * GradientBoostingClassifier (high accuracy, ensemble method)
+     * MLPClassifier (neural network for complex patterns)
 
-2. Return ONLY the Python function code that builds the pipeline like:
+2. Return ONLY the Python function code that builds the pipeline:
 
 ```python
 def build_full_pipeline():
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler
     from sklearn.impute import SimpleImputer
+    from sklearn.decomposition import PCA
+    from sklearn.ensemble import RandomForestClassifier  # or your choice
     # ... other imports
     
     preprocessor = Pipeline([
@@ -80,10 +87,19 @@ def build_full_pipeline():
     ])
     
     feature_engineering = Pipeline([
-        # your feature engineering steps
+        ('pca', PCA(n_components=0.95, random_state=42))  # or your choice
     ])
     
-    model = # your model choice
+    # Choose model based on dataset characteristics:
+    # - Small dataset (< 200 samples): SVC or LogisticRegression
+    # - Medium dataset (200-2000): RandomForest or GradientBoosting
+    # - Large dataset (> 2000): MLPClassifier or GradientBoosting
+    # - Many features (> 50): RandomForest or GradientBoosting
+    model = RandomForestClassifier(
+        n_estimators=100,
+        max_depth=10,
+        random_state=42
+    )  # Example - choose best for this dataset!
     
     return Pipeline([
         ('preprocessor', preprocessor),
@@ -93,13 +109,21 @@ def build_full_pipeline():
 ```
 
 3. Add detailed comments explaining:
-   - Why you chose each component
+   - Why you chose THIS SPECIFIC MODEL over others for this dataset
    - What hyperparameters you selected and why
-   - How each step helps for this specific dataset
+   - How dataset size/features influenced your model choice
+   - Expected performance characteristics
 
 4. Use random_state=42 where applicable
-5. Choose appropriate model and hyperparameters for this dataset size and complexity
-6. Keep preprocessing simple but effective
+5. Choose APPROPRIATE and SOPHISTICATED model - not just LogisticRegression!
+6. Consider dataset size and complexity when choosing model
+7. Tune hyperparameters based on dataset characteristics
+
+IMPORTANT: Choose the BEST model for this specific dataset based on:
+- Dataset size ({dataset_info['n_samples']} samples)
+- Feature count ({dataset_info['n_features']} features)
+- Number of classes ({dataset_info['n_classes']} classes)
+- Complexity of decision boundaries (infer from dataset name)
 
 Generate ONLY the function code, no explanations outside the code.
 """
