@@ -65,7 +65,7 @@ Requirements:
    - 'feature_engineering': Optional dimensionality reduction (e.g., PCA)
    - 'model': Classification model (LogisticRegression, RandomForest, SVC, etc.)
 
-2. Return ONLY the Python function code that builds the pipeline:
+2. Return ONLY the Python function code that builds the pipeline like:
 
 ```python
 def build_full_pipeline():
