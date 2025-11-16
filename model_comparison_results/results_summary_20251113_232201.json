@@ -1,0 +1,14 @@
+{
+  "california-housing-prices": {
+    "initialization": {
+      "mean": 206171.291667,
+      "count": 1
+    }
+  },
+  "iris_gbdt": {
+    "initialization": {
+      "mean": 0.958333,
+      "count": 1
+    }
+  }
+}

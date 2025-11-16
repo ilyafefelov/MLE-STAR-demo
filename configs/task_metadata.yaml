@@ -1,0 +1,43 @@
+# Task metadata for MLE-STAR experiments
+# Maps task names to problem types for proper metric interpretation
+
+tasks:
+  breast_cancer:
+    type: classification
+    metric: accuracy
+    n_classes: 2
+  
+  wine:
+    type: classification
+    metric: accuracy
+    n_classes: 3
+  
+  digits:
+    type: classification
+    metric: accuracy
+    n_classes: 10
+  
+  iris:
+    type: classification
+    metric: accuracy
+    n_classes: 3
+  
+  iris_gbdt:
+    type: classification
+    metric: accuracy
+    n_classes: 3
+  
+  wine_gbdt:
+    type: classification
+    metric: accuracy
+    n_classes: 3
+  
+  digits_gbdt:
+    type: classification
+    metric: accuracy
+    n_classes: 10
+  
+  california-housing-prices:
+    type: regression
+    metric: mse
+    lower_is_better: true
