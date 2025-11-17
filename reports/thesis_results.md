@@ -40,6 +40,12 @@ Key ablation effects aggregated by dataset (select highlights):
   - For n=10 aggregated runs (not necessarily tied to a single variant), results showed `minimal` mean 0.9567 and `full` 0.9100 and an ANOVA p≈0.00286 indicating a statistically significant difference; in pairwise tests minimal vs full was significant in those runs.
   - Interpretation: For small datasets like `iris`, the effect of ablation is sensitive to sampling variance; ensemble and tuning may not always help depending on random seed and the structure of the dataset.
 
+### New results at n=20 for Digits and Iris (updated)
+
+- Digits (n_runs=20): the `minimal` and `no_feature_engineering` configurations now achieve mean accuracies ~0.9396 and ~0.9393 respectively, compared with `full` 0.9194. ANOVA: F=8.6138, p=5.987e-07; pairwise comparisons show `full` vs `minimal` and `no_feature_engineering` significant after Bonferroni correction. This strengthens the claim that feature engineering and additional tuning/ensembling may be unnecessary or detrimental for this dataset when using the generated pipelines.
+
+- Iris (n_runs=20): `minimal` and `no_feature_engineering` both produce mean accuracies ~0.9567 compared with `full` 0.9117; ANOVA: F=8.5404, p=6.78e-07 and pairwise contrasts show `full` vs `minimal`/`no_feature_engineering` are significant (Bonferroni-corrected). This corroborates the n=10 result and indicates that a simple pipeline can outperform more complex pipelines on small datasets in this context.
+
 ## Statistical analysis & replication
 - All statistical analyses (ANOVA and pairwise t-tests with Bonferroni correction) are executed in the `src/mle_star_ablation/stats.py` module and the outputs are stored next to each run in `results/<dataset>_<variant*` directories:
   - `summary_statistics_*.csv` — per-configuration summary metrics (mean, std, CI, n_runs)

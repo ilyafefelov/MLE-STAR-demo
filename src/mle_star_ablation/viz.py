@@ -105,7 +105,7 @@ def plot_boxplot(
     fig, ax = plt.subplots(figsize=figsize)
     
     sns.boxplot(data=df, x='Configuration', y=metric_name, 
-                order=ordered_configs, ax=ax, palette="husl")
+                order=ordered_configs, ax=ax)
     sns.stripplot(data=df, x='Configuration', y=metric_name,
                   order=ordered_configs, ax=ax, 
                   color='black', alpha=0.3, size=4)
@@ -159,7 +159,7 @@ def plot_violin(
     fig, ax = plt.subplots(figsize=figsize)
     
     sns.violinplot(data=df, x='Configuration', y=metric_name,
-                   order=ordered_configs, ax=ax, palette="husl")
+                   order=ordered_configs, ax=ax)
     
     ax.set_xlabel('Configuration', fontsize=12, fontweight='bold')
     ax.set_ylabel(metric_name, fontsize=12, fontweight='bold')

@@ -13,8 +13,10 @@ def table1_to_latex(df, outpath: Path):
     # Keep relevant columns and order
     cols = ['dataset', 'variant', 'accuracy_mean', 'accuracy_std', 'generation_time', 'code_length', 'model_used']
     df = df[cols]
-    df['accuracy_mean'] = df['accuracy_mean'].round(4)
-    df['accuracy_std'] = df['accuracy_std'].round(4)
+    # Use .loc to avoid SettingWithCopyWarning and operate on a copy explicitly
+    df = df.copy()
+    df.loc[:, 'accuracy_mean'] = df['accuracy_mean'].round(4)
+    df.loc[:, 'accuracy_std'] = df['accuracy_std'].round(4)
     latex = df.to_latex(index=False, longtable=True, caption='Model comparison: mean accuracy per dataset and Gemini variant', label='tab:gemini_model_comparison')
     outpath.write_text(latex, encoding='utf-8')
     print(f'Wrote LaTeX table to {outpath}')
@@ -23,8 +25,9 @@ def table2_to_latex(df, outpath: Path):
     # Select representative columns
     cols = ['dataset', 'variant', 'configuration', 'accuracy_mean', 'accuracy_std', 'n_runs']
     df = df[cols]
-    df['accuracy_mean'] = df['accuracy_mean'].round(4)
-    df['accuracy_std'] = df['accuracy_std'].round(4)
+    df = df.copy()
+    df.loc[:, 'accuracy_mean'] = df['accuracy_mean'].round(4)
+    df.loc[:, 'accuracy_std'] = df['accuracy_std'].round(4)
     latex = df.to_latex(index=False, longtable=True, caption='Ablation study: mean accuracy by configuration', label='tab:ablation')
     outpath.write_text(latex, encoding='utf-8')
     print(f'Wrote LaTeX table to {outpath}')

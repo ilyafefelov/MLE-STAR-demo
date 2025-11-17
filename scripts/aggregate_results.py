@@ -31,11 +31,30 @@ def main():
         # Try to infer dataset and variant from path
         parts = csv_file.parts
         # find index of 'results' and take next parts
+        dataset_variant = 'unknown'
         try:
             i = parts.index('results')
-            dataset_variant = parts[i+1]
+            candidate = parts[i+1]
+            # If the path uses 'variants_n*' folder, the dataset name is one level deeper
+            if isinstance(candidate, str) and candidate.startswith('variants') and len(parts) > i+2:
+                dataset_variant = parts[i+2]
+            else:
+                dataset_variant = candidate
         except ValueError:
             dataset_variant = 'unknown'
+
+        # If dataset_variant is still a 'variants' placeholder or unknown, attempt to detect known dataset
+        if not isinstance(dataset_variant, str) or dataset_variant.startswith('variants') or dataset_variant == 'unknown':
+            KNOWN_DATASETS = ['breast_cancer', 'wine', 'digits', 'iris']
+            found = False
+            for p in parts:
+                for ds in KNOWN_DATASETS:
+                    if p == ds or p.startswith(ds + '_'):
+                        dataset_variant = p
+                        found = True
+                        break
+                if found:
+                    break
 
         for _, r in df.iterrows():
             row = r.to_dict()
