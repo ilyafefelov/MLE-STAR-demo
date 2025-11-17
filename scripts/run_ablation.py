@@ -157,11 +157,57 @@ def main():
         action='store_true',
         help='Детальний вивід'
     )
+    parser.add_argument(
+        '--pipeline-file',
+        type=str,
+        default=None,
+        help='Optional path to a Python file with build_full_pipeline() to use (overrides module pipeline)'
+    )
+    parser.add_argument(
+        '--variant',
+        type=str,
+        choices=['flash_lite', 'flash', 'pro', 'all'],
+        default=None,
+        help='Optional pre-defined variant name to use from model_comparison_results'
+    )
     
     args = parser.parse_args()
     
+    # Dynamic pipeline file registration logic
+    pipeline_file = args.pipeline_file
+    if args.variant and not pipeline_file:
+        # Map variant to file name pattern; expect files in model_comparison_results
+        variant_map = {
+            'flash_lite': f'model_comparison_results/gemini_2.5_flash_lite_{args.dataset}.py',
+            'flash': f'model_comparison_results/gemini_2.5_flash_{args.dataset}.py',
+            'pro': f'model_comparison_results/gemini_2.5_pro_{args.dataset}.py'
+        }
+        pipeline_file = variant_map.get(args.variant)
+
+    if pipeline_file:
+        try:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location('custom_pipeline', pipeline_file)
+            custom_mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(custom_mod)
+
+            # Register custom build_full_pipeline in mle_star_generated_pipeline
+            from src.mle_star_ablation import mle_star_generated_pipeline as mgp
+            if hasattr(custom_mod, 'build_full_pipeline'):
+                mgp.set_full_pipeline_callable(custom_mod.build_full_pipeline)
+                print(f"Registered external pipeline: {pipeline_file}")
+            else:
+                print(f"Warning: pipeline file {pipeline_file} does not define build_full_pipeline().")
+        except Exception as e:
+            print(f"Could not load pipeline file {pipeline_file}: {e}")
+
     # Створення директорії для результатів
     output_dir = Path(args.output_dir)
+    # add variant suffix for output folder
+    if args.variant:
+        output_dir = output_dir / args.variant
+    elif args.pipeline_file:
+        output_dir = output_dir / Path(args.pipeline_file).stem
     output_dir.mkdir(exist_ok=True, parents=True)
     
     # Виведення інформації про датасет

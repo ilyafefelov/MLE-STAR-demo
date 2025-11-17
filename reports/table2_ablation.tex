@@ -1,0 +1,138 @@
+\begin{longtable}{lllrrr}
+\caption{Ablation study: mean accuracy by configuration} \label{tab:ablation} \\
+\toprule
+dataset & variant & configuration & accuracy_mean & accuracy_std & n_runs \\
+\midrule
+\endfirsthead
+\caption[]{Ablation study: mean accuracy by configuration} \\
+\toprule
+dataset & variant & configuration & accuracy_mean & accuracy_std & n_runs \\
+\midrule
+\endhead
+\midrule
+\multicolumn{6}{r}{Continued on next page} \\
+\midrule
+\endfoot
+\bottomrule
+\endlastfoot
+digits & n10 & minimal & 0.938600 & 0.012000 & 10 \\
+digits & n10 & no_feature_engineering & 0.938300 & 0.011900 & 10 \\
+digits & n10 & no_scaling & 0.932200 & 0.011600 & 10 \\
+digits & n10 & full & 0.923300 & 0.015800 & 10 \\
+digits & n10 & no_tuning & 0.923300 & 0.015800 & 10 \\
+digits & n10 & no_ensemble & 0.923300 & 0.015800 & 10 \\
+digits & n5 & minimal & 0.935000 & 0.011400 & 5 \\
+digits & n5 & no_feature_engineering & 0.935000 & 0.011400 & 5 \\
+digits & n5 & no_scaling & 0.931100 & 0.011900 & 5 \\
+digits & n5 & full & 0.922200 & 0.015000 & 5 \\
+digits & n5 & no_tuning & 0.922200 & 0.015000 & 5 \\
+digits & n5 & no_ensemble & 0.922200 & 0.015000 & 5 \\
+iris & n10 & minimal & 0.956700 & 0.031600 & 10 \\
+iris & n10 & no_feature_engineering & 0.956700 & 0.031600 & 10 \\
+iris & n10 & no_scaling & 0.953300 & 0.042200 & 10 \\
+iris & n10 & full & 0.910000 & 0.041700 & 10 \\
+iris & n10 & no_tuning & 0.910000 & 0.041700 & 10 \\
+iris & n10 & no_ensemble & 0.910000 & 0.041700 & 10 \\
+iris & n5 & no_scaling & 0.966700 & 0.047100 & 5 \\
+iris & n5 & no_feature_engineering & 0.940000 & 0.027900 & 5 \\
+iris & n5 & minimal & 0.940000 & 0.027900 & 5 \\
+iris & n5 & full & 0.920000 & 0.055800 & 5 \\
+iris & n5 & no_tuning & 0.920000 & 0.055800 & 5 \\
+iris & n5 & no_ensemble & 0.920000 & 0.055800 & 5 \\
+wine & n5 & minimal & 0.977800 & 0.023200 & 5 \\
+wine & n5 & no_feature_engineering & 0.977800 & 0.023200 & 5 \\
+wine & n5 & no_tuning & 0.955600 & 0.024800 & 5 \\
+wine & n5 & full & 0.955600 & 0.024800 & 5 \\
+wine & n5 & no_ensemble & 0.955600 & 0.024800 & 5 \\
+wine & n5 & no_scaling & 0.722200 & 0.065100 & 5 \\
+wine & smoke & minimal & 1.000000 & NaN & 1 \\
+wine & smoke & no_feature_engineering & 1.000000 & NaN & 1 \\
+wine & smoke & no_tuning & 0.944400 & NaN & 1 \\
+wine & smoke & full & 0.944400 & NaN & 1 \\
+wine & smoke & no_ensemble & 0.944400 & NaN & 1 \\
+wine & smoke & no_scaling & 0.777800 & NaN & 1 \\
+wine & pro_smoke & no_feature_engineering & 0.972200 & NaN & 1 \\
+wine & pro_smoke & full & 0.944400 & NaN & 1 \\
+wine & pro_smoke & no_scaling & 0.944400 & NaN & 1 \\
+wine & pro_smoke & no_tuning & 0.944400 & NaN & 1 \\
+wine & pro_smoke & no_ensemble & 0.944400 & NaN & 1 \\
+wine & pro_smoke & minimal & 0.388900 & NaN & 1 \\
+wine & pro_n5 & full & 0.988900 & 0.024800 & 5 \\
+wine & pro_n5 & no_scaling & 0.988900 & 0.024800 & 5 \\
+wine & pro_n5 & no_tuning & 0.988900 & 0.024800 & 5 \\
+wine & pro_n5 & no_ensemble & 0.988900 & 0.024800 & 5 \\
+wine & pro_n5 & no_feature_engineering & 0.983300 & 0.015200 & 5 \\
+wine & pro_n5 & minimal & 0.405600 & 0.024800 & 5 \\
+wine & flash_n5 & no_feature_engineering & 0.977800 & 0.023200 & 5 \\
+wine & flash_n5 & full & 0.955600 & 0.031700 & 5 \\
+wine & flash_n5 & no_ensemble & 0.955600 & 0.031700 & 5 \\
+wine & flash_n5 & no_tuning & 0.955600 & 0.031700 & 5 \\
+wine & flash_n5 & no_scaling & 0.755600 & 0.060200 & 5 \\
+wine & flash_n5 & minimal & 0.733300 & 0.057600 & 5 \\
+wine & flash_lite_n5 & full & 0.972200 & 0.039300 & 5 \\
+wine & flash_lite_n5 & no_tuning & 0.972200 & 0.039300 & 5 \\
+wine & flash_lite_n5 & no_ensemble & 0.972200 & 0.039300 & 5 \\
+wine & flash_lite_n5 & no_feature_engineering & 0.966700 & 0.023200 & 5 \\
+wine & flash_lite_n5 & minimal & 0.766700 & 0.063900 & 5 \\
+wine & flash_lite_n5 & no_scaling & 0.705600 & 0.057600 & 5 \\
+variants & n10 & minimal & 0.953500 & 0.016000 & 10 \\
+variants & n10 & no_feature_engineering & 0.953500 & 0.016000 & 10 \\
+variants & n10 & no_tuning & 0.944700 & 0.013700 & 10 \\
+variants & n10 & full & 0.944700 & 0.013700 & 10 \\
+variants & n10 & no_ensemble & 0.944700 & 0.013700 & 10 \\
+variants & n10 & no_scaling & 0.850900 & 0.037200 & 10 \\
+iris & pro_n5 & minimal & 0.973300 & 0.027900 & 5 \\
+iris & pro_n5 & no_scaling & 0.966700 & 0.033300 & 5 \\
+iris & pro_n5 & no_feature_engineering & 0.946700 & 0.029800 & 5 \\
+iris & pro_n5 & full & 0.933300 & 0.052700 & 5 \\
+iris & pro_n5 & no_tuning & 0.933300 & 0.052700 & 5 \\
+iris & pro_n5 & no_ensemble & 0.933300 & 0.052700 & 5 \\
+iris & flash_n5 & no_scaling & 0.960000 & 0.036500 & 5 \\
+iris & flash_n5 & no_feature_engineering & 0.953300 & 0.018300 & 5 \\
+iris & flash_n5 & minimal & 0.953300 & 0.018300 & 5 \\
+iris & flash_n5 & full & 0.906700 & 0.043500 & 5 \\
+iris & flash_n5 & no_tuning & 0.906700 & 0.043500 & 5 \\
+iris & flash_n5 & no_ensemble & 0.906700 & 0.043500 & 5 \\
+iris & flash_lite_n5 & no_scaling & 0.960000 & 0.043500 & 5 \\
+iris & flash_lite_n5 & no_feature_engineering & 0.953300 & 0.029800 & 5 \\
+iris & flash_lite_n5 & minimal & 0.953300 & 0.029800 & 5 \\
+iris & flash_lite_n5 & full & 0.920000 & 0.076700 & 5 \\
+iris & flash_lite_n5 & no_tuning & 0.920000 & 0.076700 & 5 \\
+iris & flash_lite_n5 & no_ensemble & 0.920000 & 0.076700 & 5 \\
+digits & pro_n5 & no_scaling & 0.989400 & 0.006000 & 5 \\
+digits & pro_n5 & minimal & 0.988900 & 0.005200 & 5 \\
+digits & pro_n5 & no_feature_engineering & 0.980000 & 0.003600 & 5 \\
+digits & pro_n5 & full & 0.978300 & 0.004600 & 5 \\
+digits & pro_n5 & no_tuning & 0.978300 & 0.004600 & 5 \\
+digits & pro_n5 & no_ensemble & 0.978300 & 0.004600 & 5 \\
+digits & flash_n5 & full & 0.968300 & 0.005800 & 5 \\
+digits & flash_n5 & no_tuning & 0.968300 & 0.005800 & 5 \\
+digits & flash_n5 & no_ensemble & 0.968300 & 0.005800 & 5 \\
+digits & flash_n5 & no_feature_engineering & 0.966700 & 0.010200 & 5 \\
+digits & flash_n5 & minimal & 0.961700 & 0.009100 & 5 \\
+digits & flash_n5 & no_scaling & 0.953300 & 0.008400 & 5 \\
+digits & flash_lite_n5 & no_feature_engineering & 0.982200 & 0.005000 & 5 \\
+digits & flash_lite_n5 & full & 0.978900 & 0.004600 & 5 \\
+digits & flash_lite_n5 & no_ensemble & 0.978900 & 0.004600 & 5 \\
+digits & flash_lite_n5 & no_tuning & 0.978900 & 0.004600 & 5 \\
+digits & flash_lite_n5 & no_scaling & 0.902200 & 0.017700 & 5 \\
+digits & flash_lite_n5 & minimal & 0.830600 & 0.028900 & 5 \\
+breast_cancer & pro_n5 & no_feature_engineering & 0.973700 & 0.006200 & 5 \\
+breast_cancer & pro_n5 & full & 0.961400 & 0.010000 & 5 \\
+breast_cancer & pro_n5 & no_ensemble & 0.961400 & 0.010000 & 5 \\
+breast_cancer & pro_n5 & no_tuning & 0.961400 & 0.010000 & 5 \\
+breast_cancer & pro_n5 & no_scaling & 0.631600 & 0.000000 & 5 \\
+breast_cancer & pro_n5 & minimal & 0.631600 & 0.000000 & 5 \\
+breast_cancer & flash_n5 & minimal & 0.966700 & 0.011400 & 5 \\
+breast_cancer & flash_n5 & no_feature_engineering & 0.964900 & 0.008800 & 5 \\
+breast_cancer & flash_n5 & no_scaling & 0.943900 & 0.019200 & 5 \\
+breast_cancer & flash_n5 & full & 0.943900 & 0.023700 & 5 \\
+breast_cancer & flash_n5 & no_tuning & 0.943900 & 0.023700 & 5 \\
+breast_cancer & flash_n5 & no_ensemble & 0.943900 & 0.023700 & 5 \\
+breast_cancer & flash_lite_n5 & minimal & 0.959600 & 0.018200 & 5 \\
+breast_cancer & flash_lite_n5 & no_feature_engineering & 0.959600 & 0.018200 & 5 \\
+breast_cancer & flash_lite_n5 & no_tuning & 0.940400 & 0.019000 & 5 \\
+breast_cancer & flash_lite_n5 & full & 0.940400 & 0.019000 & 5 \\
+breast_cancer & flash_lite_n5 & no_ensemble & 0.940400 & 0.019000 & 5 \\
+breast_cancer & flash_lite_n5 & no_scaling & 0.847400 & 0.046300 & 5 \\
+\end{longtable}

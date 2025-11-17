@@ -37,6 +37,22 @@ from sklearn.linear_model import LogisticRegression
 
 # ==== 1. ПОВНИЙ PIPELINE ВІД GEMINI API ====================================
 
+__FULL_PIPELINE_FN = None
+
+def set_full_pipeline_callable(fn):
+    """
+    Register an external build_full_pipeline() function from a Gemini-generated file.
+    If not registered, fallback to module's own build_full_pipeline().
+    """
+    global __FULL_PIPELINE_FN
+    __FULL_PIPELINE_FN = fn
+
+
+def _get_full_pipeline_callable():
+    """Return the registered build_full_pipeline or the default one in this module."""
+    return __FULL_PIPELINE_FN if __FULL_PIPELINE_FN is not None else build_full_pipeline
+
+
 def build_full_pipeline(
     numeric_features: Optional[List[str]] = None,
     categorical_features: Optional[List[str]] = None
@@ -202,7 +218,7 @@ def build_pipeline(config, **kwargs) -> Pipeline:
         # Pipeline буде без кроку 'preprocessor'
     """
     # Отримуємо базовий pipeline від Gemini
-    base = build_full_pipeline(**kwargs)
+    base = _get_full_pipeline_callable()(**kwargs)
     pipe = deepcopy(base)  # Копія, щоб не модифікувати оригінал
     
     # Preprocessing (включає imputer + scaler)
