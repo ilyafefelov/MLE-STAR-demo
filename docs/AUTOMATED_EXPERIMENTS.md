@@ -67,7 +67,7 @@ Potential next steps (not yet implemented):
 - Additional metric parsing (F1, ROC AUC) if generated scripts print them.
 
 ### Suite Result Aggregation
-Use `scripts/run_experiment_suite.py` whenever you need to execute the predefined ablation manifest (e.g., the 5 dataset × 3 run configuration used in this session). Once the suite finishes, consolidate every `summary_statistics_*.csv` under `results/` via `scripts/summarize_suite_results.py`:
+Use `scripts/run_experiment_suite.py` whenever you need to execute the predefined ablation manifest (e.g., the 5 dataset × 3 run configuration used in this session). When plots are required (diploma/demo outputs), remove the `--no-plots` flags inside `configs/experiment_suite.yaml` and set `MPLBACKEND=Agg` (or another headless backend) before launching so Matplotlib saves figures without blocking. Once the suite finishes, consolidate every `summary_statistics_*.csv` under `results/` via `scripts/summarize_suite_results.py`:
 
 ```bash
 # Aggregate and print the merged table
