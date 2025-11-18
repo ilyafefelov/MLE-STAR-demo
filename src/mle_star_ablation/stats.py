@@ -203,6 +203,9 @@ def pairwise_comparison(
             
             # T-test
             t_result = paired_t_test(scores_a, scores_b, alpha)
+
+            # Approximate z-statistic from two-tailed p-value to help compare tests on a common scale
+            z_statistic = _t_to_z_score(t_result['t_statistic'], t_result['p_value'])
             
             # Effect size
             cohen_d = effect_size_cohen_d(scores_a, scores_b)
@@ -214,6 +217,7 @@ def pairwise_comparison(
                 'mean_b': np.mean(scores_b),
                 'mean_diff': t_result['mean_diff'],
                 't_statistic': t_result['t_statistic'],
+                'z_statistic': z_statistic,
                 'p_value': t_result['p_value'],
                 'cohen_d': cohen_d,
                 'significant': t_result['significant']
@@ -228,6 +232,18 @@ def pairwise_comparison(
         df['corrected_alpha'] = corrected_alpha
     
     return df
+
+
+def _t_to_z_score(t_statistic: float, p_value: float) -> float:
+    """Convert a two-tailed t-test result to an equivalent z-score."""
+    if np.isnan(t_statistic) or np.isnan(p_value):
+        return float('nan')
+    # Two-tailed p-value -> one-tailed probability for conversion
+    clipped_p = np.clip(p_value / 2.0, 1e-12, 0.5)
+    z_value = stats.norm.ppf(1 - clipped_p)
+    if np.isnan(z_value) or np.isinf(z_value):
+        return float('nan')
+    return float(np.sign(t_statistic) * z_value)
 
 
 def summarize_statistics(

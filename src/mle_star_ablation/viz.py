@@ -2,6 +2,7 @@
 Модуль для візуалізації результатів абляційних експериментів.
 """
 
+import math
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -184,6 +185,25 @@ def plot_violin(
     plt.close(fig)
 
 
+def _build_pairwise_matrix(
+    comparison_df: pd.DataFrame,
+    metric: str
+) -> pd.DataFrame:
+    configs = sorted(set(comparison_df['config_a'].tolist() + comparison_df['config_b'].tolist()))
+    matrix = pd.DataFrame(np.nan, index=configs, columns=configs, dtype=float)
+    for _, row in comparison_df.iterrows():
+        value = row.get(metric)
+        if pd.isna(value):
+            continue
+        matrix.loc[row['config_a'], row['config_b']] = value
+        matrix.loc[row['config_b'], row['config_a']] = value
+    diag_value = 1.0 if metric == 'p_value' else 0.0
+    np.fill_diagonal(matrix.values, diag_value)
+    if metric != 'p_value':
+        matrix = matrix.fillna(0.0)
+    return matrix
+
+
 def plot_heatmap(
     comparison_df: pd.DataFrame,
     metric: str = 'p_value',
@@ -191,46 +211,75 @@ def plot_heatmap(
     save_path: Optional[str] = None
     , show: bool = False
 ):
-    """
-    Створює heatmap для попарних порівнянь.
-    
-    Args:
-        comparison_df: DataFrame з результатами попарних порівнянь
-        metric: Яку метрику візуалізувати ('p_value', 'cohen_d', тощо)
-        figsize: Розмір фігури
-        save_path: Шлях для збереження
-    """
-    # Створення квадратної матриці
-    configs = sorted(set(comparison_df['config_a'].tolist() + 
-                        comparison_df['config_b'].tolist()))
-    
-    matrix = pd.DataFrame(np.nan, index=configs, columns=configs)
-    
-    for _, row in comparison_df.iterrows():
-        matrix.loc[row['config_a'], row['config_b']] = row[metric]
-        matrix.loc[row['config_b'], row['config_a']] = row[metric]
-    
-    # Діагональ = 0 (порівняння з самим собою)
-    for config in configs:
-        matrix.loc[config, config] = 0 if metric == 'mean_diff' else 1.0
-    
-    # Створення графіку
+    """Створює heatmap для попарних порівнянь."""
+    if comparison_df is None or comparison_df.empty or metric not in comparison_df.columns:
+        return
+
+    matrix = _build_pairwise_matrix(comparison_df, metric)
+
     fig, ax = plt.subplots(figsize=figsize)
-    
     if metric == 'p_value':
-        # Логарифмічна шкала для p-values
-        sns.heatmap(matrix.astype(float), annot=True, fmt='.3f', 
-                    cmap='RdYlGn_r', ax=ax, cbar_kws={'label': 'P-value'})
+        sns.heatmap(matrix, annot=True, fmt='.3f', cmap='RdYlGn_r', ax=ax, cbar_kws={'label': 'P-value'})
     else:
-        sns.heatmap(matrix.astype(float), annot=True, fmt='.3f',
-                    cmap='coolwarm', center=0, ax=ax, 
-                    cbar_kws={'label': metric})
-    
-    ax.set_title(f'Pairwise Comparison Heatmap ({metric})', 
+        sns.heatmap(matrix, annot=True, fmt='.3f', cmap='coolwarm', center=0, ax=ax,
+                    cbar_kws={'label': metric.replace('_', ' ').title()})
+
+    ax.set_title(f'Pairwise Comparison Heatmap ({metric.replace("_", " ").title()})',
                  fontsize=14, fontweight='bold')
-    
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+    ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
+
     plt.tight_layout()
-    
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Plot saved to {save_path}")
+    if show:
+        plt.show()
+    plt.close(fig)
+
+
+def plot_statistical_overview(
+    comparison_df: pd.DataFrame,
+    metrics: Optional[List[str]] = None,
+    figsize: tuple = (16, 12),
+    save_path: Optional[str] = None,
+    show: bool = False
+):
+    """Створює зведений макет heatmap для кількох статистик (t, p, z, d, mean diff)."""
+    if comparison_df is None or comparison_df.empty:
+        return
+    default_metrics = ['p_value', 't_statistic', 'z_statistic', 'cohen_d', 'mean_diff']
+    metrics = metrics or default_metrics
+    available_metrics = [m for m in metrics if m in comparison_df.columns]
+    if not available_metrics:
+        return
+
+    n_metrics = len(available_metrics)
+    n_cols = 2 if n_metrics > 1 else 1
+    n_rows = math.ceil(n_metrics / n_cols)
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize)
+    axes = np.atleast_1d(axes).flatten()
+
+    for idx, metric in enumerate(available_metrics):
+        matrix = _build_pairwise_matrix(comparison_df, metric)
+        ax = axes[idx]
+        if metric == 'p_value':
+            heatmap = sns.heatmap(matrix, annot=True, fmt='.3f', cmap='RdYlGn_r', ax=ax,
+                                  cbar_kws={'label': 'P-value'})
+        elif metric in {'t_statistic', 'z_statistic', 'mean_diff', 'cohen_d'}:
+            heatmap = sns.heatmap(matrix, annot=True, fmt='.2f', cmap='coolwarm', center=0, ax=ax,
+                                  cbar_kws={'label': metric.replace('_', ' ').title()})
+        else:
+            heatmap = sns.heatmap(matrix, annot=True, fmt='.3f', cmap='viridis', ax=ax,
+                                  cbar_kws={'label': metric})
+        heatmap.set_title(f'{metric.replace("_", " ").title()} Heatmap', fontsize=12, fontweight='bold')
+        heatmap.set_xticklabels(heatmap.get_xticklabels(), rotation=45, ha='right')
+        heatmap.set_yticklabels(heatmap.get_yticklabels(), rotation=0)
+
+    for ax in axes[len(available_metrics):]:
+        ax.axis('off')
+
+    plt.tight_layout()
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"Plot saved to {save_path}")
@@ -343,17 +392,26 @@ def create_all_plots(
     
     # Heatmap (якщо є порівняння)
     if comparison_df is not None and len(comparison_df) > 0:
-        plot_heatmap(
-            comparison_df, metric='p_value',
-            save_path=output_path / 'pvalue_heatmap.png',
+        heatmap_specs = [
+            ('p_value', 'pvalue_heatmap.png'),
+            ('t_statistic', 'tstat_heatmap.png'),
+            ('z_statistic', 'zscore_heatmap.png'),
+            ('cohen_d', 'cohend_heatmap.png'),
+            ('mean_diff', 'mean_diff_heatmap.png')
+        ]
+        for metric, filename in heatmap_specs:
+            if metric in comparison_df.columns:
+                plot_heatmap(
+                    comparison_df,
+                    metric=metric,
+                    save_path=output_path / filename,
+                    show=False
+                )
+
+        plot_statistical_overview(
+            comparison_df,
+            save_path=output_path / 'statistical_overview.png',
             show=False
         )
-        
-        if 'cohen_d' in comparison_df.columns:
-            plot_heatmap(
-                comparison_df, metric='cohen_d',
-                save_path=output_path / 'cohend_heatmap.png',
-                show=False
-            )
     
     print(f"All plots saved to {output_dir}/")
