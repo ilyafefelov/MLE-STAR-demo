@@ -29,12 +29,25 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.mle_star_ablation.config import get_standard_configs
 from src.mle_star_ablation.datasets import DatasetLoader
 from src.mle_star_ablation.metrics import calculate_classification_metrics
+from src.mle_star_ablation.ast_utils import inject_random_state_into_build_fn
+from scripts.validate_generated_pipeline import validate_pipeline_file
 
 
 def generate_pipeline_with_gemini(dataset_name: str, api_key: str) -> str:
     """
     Генерує ML pipeline через Gemini API для заданого датасету.
     
+    parser.add_argument(
+        '--seed',
+        type=int,
+        default=None,
+        help='Optional base seed for deterministic runs'
+    )
+    parser.add_argument(
+        '--deterministic',
+        action='store_true',
+        help='Attempt to enforce deterministic runs (set threads to 1, seed RNGs)'
+    )
     Args:
         dataset_name: Назва датасету (breast_cancer, wine, digits, iris)
         api_key: Gemini API key
@@ -128,8 +141,9 @@ IMPORTANT: Choose the BEST model for this specific dataset based on:
 Generate ONLY the function code, no explanations outside the code.
 """
     
-    print(f"\n📡 Generating pipeline for {dataset_name} via Gemini API...")
-    response = model.generate_content(prompt)
+    print(f"\n📡 Generating pipeline for {dataset_name} via Gemini API (deterministic generation: temperature=0, top_p=1)...")
+    # Force deterministic generation (temperature=0) to improve reproducibility
+    response = model.generate_content(prompt, temperature=0, top_p=1)
     
     # Витягуємо код з відповіді
     code = response.text
@@ -139,6 +153,15 @@ Generate ONLY the function code, no explanations outside the code.
         code = code.split("```python")[1].split("```")[0].strip()
     elif "```" in code:
         code = code.split("```")[1].split("```")[0].strip()
+    # Also save the full raw response for auditability
+    try:
+        out_dir = Path('generated_pipelines')
+        out_dir.mkdir(parents=True, exist_ok=True)
+        raw_file = out_dir / f"pipeline_{dataset_name}_raw_response.txt"
+        with open(raw_file, 'w', encoding='utf-8') as rf:
+            rf.write(response.text)
+    except Exception:
+        pass
     
     return code
 
@@ -173,7 +196,7 @@ if __name__ == "__main__":
     from sklearn.model_selection import cross_val_score
     
     X, y = load_{dataset_name}(return_X_y=True)
-    pipeline = build_full_pipeline()
+    pipeline = build_full_pipeline(random_state=42)
     
     scores = cross_val_score(pipeline, X, y, cv=3, scoring='accuracy')
     print(f"Pipeline for {dataset_name}:")
@@ -187,7 +210,7 @@ if __name__ == "__main__":
     return filename
 
 
-def update_mle_star_pipeline(code: str, dataset_name: str):
+def update_mle_star_pipeline(code: str, dataset_name: str, generated_file: Path | None = None):
     """
     Оновлює mle_star_generated_pipeline.py новим кодом.
     
@@ -211,40 +234,48 @@ def update_mle_star_pipeline(code: str, dataset_name: str):
     if start_idx == -1 or end_idx == -1:
         raise ValueError("Could not find build_full_pipeline section in the file")
     
-    # Формуємо новий код з правильною сигнатурою
-    new_function = f'''def build_full_pipeline(
-    numeric_features: Optional[List[str]] = None,
-    categorical_features: Optional[List[str]] = None
-) -> Pipeline:
-    """
-    Повертає повний ML-конвеєр, згенерований Gemini API для {dataset_name}.
+    # Формуємо новий код з правильним build_full_pipeline та додатковою обробкою random_state
+    try:
+        fixed_code = inject_random_state_into_build_fn(code)
+    except Exception as e:
+        print(f"⚠️ AST transform failed: {e}; falling back to basic replacement")
+        fixed_code = code.replace("def build_full_pipeline():", "def build_full_pipeline(random_state: int = 42):")
+        fixed_code = fixed_code.replace('random_state=42', 'random_state=random_state')
+    # fixed_code contains build_full_pipeline function body with random_state injection
     
-    Pipeline складається з:
-    1. Preprocessor: SimpleImputer + StandardScaler
-    2. Feature Engineering: (визначено Gemini)
-    3. Model: (визначено Gemini)
-    
-    Згенеровано: Google Gemini 2.0 Flash Exp
-    Датасет: {dataset_name}
-    Дата: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    
-    Returns:
-        Pipeline: Повний sklearn Pipeline з усіма компонентами
-    """
-{code.replace("def build_full_pipeline():", "").strip()}
-'''
-    
-    # Замінюємо старий код
-    new_content = content[:start_idx] + new_function + content[end_idx:]
+    # Before replacing pipeline, validate the generated file (if available)
+    if generated_file is not None and generated_file.exists():
+        ok = validate_pipeline_file(generated_file, cv=2, random_state=42)
+        if not ok:
+            print(f"❌ Validation of generated pipeline {generated_file} failed. Skipping update.")
+            return
+
+    # Замінюємо старий код функції build_full_pipeline у файлі
+    new_content = content[:start_idx] + fixed_code + content[end_idx:]
     
     # Зберігаємо
     with open(pipeline_file, 'w', encoding='utf-8') as f:
         f.write(new_content)
     
-    print(f"✅ Updated {pipeline_file}")
+    # Reload and validate the new pipeline module to ensure it exposes a usable build_full_pipeline
+    try:
+        import importlib
+        import src.mle_star_ablation.mle_star_generated_pipeline as mgp
+        importlib.reload(mgp)
+        # call build_full_pipeline to ensure it returns a pipeline-like object
+        pipeline_instance = mgp.build_full_pipeline(random_state=42)
+        info = mgp.inspect_pipeline(pipeline_instance)
+        if 'model' not in info['steps']:
+            print(f"⚠️ Validation: model step not found in pipeline steps: {info['steps']} (skipping update)")
+            return
+    except Exception as e:
+        print(f"⚠️ Could not import/validate updated mle_star_generated_pipeline: {e}")
+        return
+
+    print(f"✅ Updated and validated {pipeline_file}")
 
 
-def run_ablation_for_dataset(dataset_name: str, n_runs: int = 5) -> Dict:
+def run_ablation_for_dataset(dataset_name: str, n_runs: int = 5, base_seed: int = None, no_plots: bool = False, deterministic: bool = False) -> Dict:
     """
     Запускає ablation аналіз для одного датасету.
     
@@ -270,7 +301,7 @@ def run_ablation_for_dataset(dataset_name: str, n_runs: int = 5) -> Dict:
         
         try:
             config_results = run_multiple_runs(
-                config, dataset_name, None, None, n_runs
+                config, dataset_name, None, None, n_runs, base_seed=base_seed, deterministic=deterministic
             )
             results[config_name] = config_results
             
@@ -320,6 +351,22 @@ def main():
         default=None,
         help='Gemini API key (або через GEMINI_API_KEY env)'
     )
+    parser.add_argument(
+        '--seed',
+        type=int,
+        default=None,
+        help='Optional base seed for deterministic runs'
+    )
+    parser.add_argument(
+        '--deterministic',
+        action='store_true',
+        help='Attempt to enforce deterministic runs (set threads to 1, seed RNGs)'
+    )
+    parser.add_argument(
+        '--no-plots',
+        action='store_true',
+        help='Do not create plots while running main_experiment'
+    )
     
     args = parser.parse_args()
     
@@ -356,10 +403,10 @@ def main():
                 code = generate_pipeline_with_gemini(dataset_name, api_key)
                 
                 # Зберігаємо згенерований код
-                save_generated_pipeline(code, dataset_name, generated_dir)
+                saved = save_generated_pipeline(code, dataset_name, generated_dir)
                 
-                # Оновлюємо mle_star_generated_pipeline.py
-                update_mle_star_pipeline(code, dataset_name)
+                # Оновлюємо mle_star_generated_pipeline.py (preflight validation occurs here)
+                update_mle_star_pipeline(code, dataset_name, generated_file=saved)
                 
                 print("✅ Pipeline generated and installed")
                 
@@ -371,7 +418,7 @@ def main():
         
         # 2. Запуск ablation аналізу
         try:
-            results = run_ablation_for_dataset(dataset_name, args.n_runs)
+            results = run_ablation_for_dataset(dataset_name, args.n_runs, base_seed=args.seed, no_plots=args.no_plots, deterministic=args.deterministic)
             all_dataset_results[dataset_name] = results
             
             # Збереження результатів для цього датасету

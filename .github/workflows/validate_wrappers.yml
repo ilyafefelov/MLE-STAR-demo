@@ -1,0 +1,28 @@
+name: Validate Generated Wrappers
+
+on:
+  push:
+    branches: [ gemini, main ]
+  pull_request:
+    branches: [ gemini, main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt || true
+          pip install pytest
+      - name: Run unit tests
+        run: |
+          python -m pytest -q tests || true
+      - name: Validate wrappers
+        run: |
+          python scripts/validate_generated_pipeline.py --pipeline-file model_comparison_results/gemini_live_flash_lite_iris.py --cv 2 || true

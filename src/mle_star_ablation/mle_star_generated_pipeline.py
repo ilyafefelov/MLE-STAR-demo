@@ -25,14 +25,18 @@ https://github.com/google/adk-samples/tree/main/python/agents/machine-learning-e
 """
 
 from copy import deepcopy
-from typing import List, Optional
+from typing import List, Optional, Any
 import warnings
 
 from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.base import BaseEstimator
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.decomposition import PCA
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+from sklearn.ensemble import VotingClassifier, StackingClassifier, BaggingClassifier
 
 
 # ==== 1. ПОВНИЙ PIPELINE ВІД GEMINI API ====================================
@@ -51,6 +55,32 @@ def set_full_pipeline_callable(fn):
 def _get_full_pipeline_callable():
     """Return the registered build_full_pipeline or the default one in this module."""
     return __FULL_PIPELINE_FN if __FULL_PIPELINE_FN is not None else build_full_pipeline
+
+
+def _ensure_pipeline_object(obj: Any) -> Pipeline:
+    """
+    Ensure the returned object from a builder is a Pipeline-like estimator.
+    Accepts: Pipeline, tuple (first element is estimator), dict with 'pipeline' key, or GridSearchCV wrapper.
+    Returns the fitted or unfitted estimator (sklearn Pipeline-like).
+    """
+    from sklearn.pipeline import Pipeline as SKPipeline
+    # If the object is already a pipeline/estimator with fit method
+    if hasattr(obj, 'fit'):
+        return obj
+    # Tuple/list: find first element with fit
+    if isinstance(obj, (tuple, list)):
+        for el in obj:
+            if hasattr(el, 'fit'):
+                return el
+        # fallback: try first element
+        return obj[0]
+    # dict with 'pipeline' key
+    if isinstance(obj, dict) and 'pipeline' in obj:
+        p = obj['pipeline']
+        if hasattr(p, 'fit'):
+            return p
+    # Not recognized - raise ValueError
+    raise ValueError('Returned object from builder is not a pipeline or estimator')
 
 
 def build_full_pipeline(
@@ -153,6 +183,61 @@ def _remove_step(pipe: Pipeline, step_name: str) -> Pipeline:
     return Pipeline(steps=steps)
 
 
+def _unwrap_hyperparam_tuner(estimator):
+    """If estimator is a hyperparam search wrapper, return the inner estimator template.
+    This doesn't require the search to be fitted; we return the `estimator` attribute.
+    """
+    if isinstance(estimator, (GridSearchCV, RandomizedSearchCV)):
+        return estimator.estimator
+    return estimator
+
+
+def _unwrap_ensemble(estimator):
+    """If estimator is an ensemble (VotingClassifier/Stacking), pick an appropriate
+    single estimator fallback so the ablation can run without ensemble.
+    """
+    if isinstance(estimator, VotingClassifier):
+        # Use the first estimator in the list
+        if estimator.estimators and len(estimator.estimators) > 0:
+            return estimator.estimators[0][1]
+    if isinstance(estimator, StackingClassifier):
+        # If stacking, return the final_estimator or the first base estimator as fallback
+        if hasattr(estimator, 'final_estimator') and estimator.final_estimator is not None:
+            return estimator.final_estimator
+        elif estimator.estimators and len(estimator.estimators) > 0:
+            return estimator.estimators[0][1]
+    if isinstance(estimator, BaggingClassifier):
+        # For bagging, use the base estimator
+        return estimator.base_estimator
+    return estimator
+
+
+def _set_n_jobs_on_estimator(estimator, n_jobs=1):
+    """Traverse an estimator or pipeline and set n_jobs=1 where applicable.
+    This is a best-effort enforcement for determinism.
+    """
+    # If a pipeline, set for nested steps
+    if isinstance(estimator, Pipeline):
+        for _, nested in estimator.steps:
+            _set_n_jobs_on_estimator(nested, n_jobs=n_jobs)
+        return
+    # ColumnTransformer
+    if isinstance(estimator, ColumnTransformer):
+        for _, transformer, _ in estimator.transformers:
+            _set_n_jobs_on_estimator(transformer, n_jobs=n_jobs)
+        return
+    # If the estimator supports set_params and has n_jobs param
+    try:
+        params = estimator.get_params()
+        if 'n_jobs' in params:
+            try:
+                estimator.set_params(n_jobs=n_jobs)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
 def _replace_step(pipe: Pipeline, step_name: str, new_estimator) -> Pipeline:
     """
     Замінює один крок іншим estimator.
@@ -195,9 +280,35 @@ def _has_step(pipe: Pipeline, step_name: str) -> bool:
     return any(name == step_name for name, _ in pipe.steps)
 
 
+def _step_contains_estimator(pipe: Pipeline, estimator_cls) -> bool:
+    """
+    Check if any step in the pipeline (or nested pipeline) contains an estimator of type estimator_cls.
+    """
+    for name, est in pipe.steps:
+        # Direct check
+        if isinstance(est, estimator_cls):
+            return True
+        # If it's a Pipeline, check nested steps
+        if isinstance(est, Pipeline):
+            for _, nested in est.steps:
+                if isinstance(nested, estimator_cls):
+                    return True
+        # ColumnTransformer -> check transformers
+        if isinstance(est, ColumnTransformer):
+            for _, transformer, _ in est.transformers:
+                # transformer can be Pipeline or estimator
+                if isinstance(transformer, estimator_cls):
+                    return True
+                if isinstance(transformer, Pipeline):
+                    for _, nested in transformer.steps:
+                        if isinstance(nested, estimator_cls):
+                            return True
+    return False
+
+
 # ==== 4. АДАПТЕР ДЛЯ АБЛЯЦІЙ ==============================================
 
-def build_pipeline(config, **kwargs) -> Pipeline:
+def build_pipeline(config, deterministic: bool = False, **kwargs) -> Pipeline:
     """
     Створює конвеєр на основі Gemini-згенерованого pipeline та конфігурації ablation.
     
@@ -218,7 +329,17 @@ def build_pipeline(config, **kwargs) -> Pipeline:
         # Pipeline буде без кроку 'preprocessor'
     """
     # Отримуємо базовий pipeline від Gemini
-    base = _get_full_pipeline_callable()(**kwargs)
+    try:
+        base = _get_full_pipeline_callable()(**kwargs)
+    except TypeError:
+        # Fallback for older generated build_full_pipeline() that doesn't accept kwargs
+        base = _get_full_pipeline_callable()()
+    # Unwrap tuple/dict/global returns to ensure we have a Pipeline/estimator
+    try:
+        base = _ensure_pipeline_object(base)
+    except Exception as e:
+        warnings.warn(f"Could not extract pipeline object from builder: {e}")
+        # Keep original - may raise later
     pipe = deepcopy(base)  # Копія, щоб не модифікувати оригінал
     
     # Preprocessing (включає imputer + scaler)
@@ -233,6 +354,32 @@ def build_pipeline(config, **kwargs) -> Pipeline:
         fe_name = _STEP_NAMES['feature_engineering']
         if _has_step(pipe, fe_name):
             pipe = _remove_step(pipe, fe_name)
+
+    # Тюнінг гіперпараметрів (GridSearchCV, RandomizedSearchCV) - розгортаємо
+    if not config.use_hyperparam_tuning:
+        # If 'model' step is present, unwrap GridSearch/Randomized
+        model_name = _STEP_NAMES['model']
+        if _has_step(pipe, model_name):
+            # find step and replace with its inner estimator template
+            for name, est in pipe.steps:
+                if name == model_name:
+                    new_est = _unwrap_hyperparam_tuner(est)
+                    pipe = _replace_step(pipe, model_name, new_est)
+                    break
+
+    # Ансамблювання (Voting/Stacking/etc.) - розгортаємо до окремої моделі
+    if not config.use_ensembling:
+        model_name = _STEP_NAMES['model']
+        if _has_step(pipe, model_name):
+            for name, est in pipe.steps:
+                if name == model_name:
+                    new_est = _unwrap_ensemble(est)
+                    pipe = _replace_step(pipe, model_name, new_est)
+                    break
+
+    # Якщо запитували детермінізм - намагаємось виставити n_jobs=1 скрізь
+    if deterministic:
+        _set_n_jobs_on_estimator(pipe, n_jobs=1)
     
     return pipe
 
@@ -255,10 +402,12 @@ def inspect_pipeline(pipe: Pipeline) -> dict:
         >>> print(info['steps'])
         ['scaler', 'feature_engineering', 'feature_selection', 'model']
     """
+    from sklearn.preprocessing import StandardScaler
     return {
         'steps': [name for name, _ in pipe.steps],
         'n_steps': len(pipe.steps),
-        'has_scaler': _has_step(pipe, _STEP_NAMES['scaler']),
+        # scaler may be nested; try to find StandardScaler within steps
+        'has_scaler': _step_contains_estimator(pipe, StandardScaler),
         'has_feature_engineering': _has_step(pipe, _STEP_NAMES['feature_engineering']),
         'has_feature_selection': _has_step(pipe, _STEP_NAMES.get('feature_selection', 'feature_selection')),
         'model_type': type(pipe.steps[-1][1]).__name__ if pipe.steps else None,
