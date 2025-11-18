@@ -15,9 +15,6 @@ from pathlib import Path
 mle_star_root = Path(__file__).parent.parent / "adk-samples" / "python" / "agents" / "machine-learning-engineering"
 sys.path.insert(0, str(mle_star_root))
 
-# Змінюємо робочу директорію на MLE-STAR root
-os.chdir(mle_star_root)
-
 def load_env(env_file: Path):
     if not env_file.exists():
         return
@@ -39,10 +36,19 @@ def parse_args():
 # Налаштування environment
 os.environ.setdefault('GOOGLE_GENAI_USE_VERTEXAI', '0')  # Використовуємо ML Dev backend
 
+# Parse args early so we can resolve env path relative to repo
 args = parse_args()
-
+# Resolve env_file path: prefer repo root if relative
+repo_root = Path(__file__).parent.parent
+env_path = Path(args.env_file)
+if not env_path.is_absolute():
+    repo_candidate = repo_root / args.env_file
+    if repo_candidate.exists():
+        env_path = repo_candidate
+    else:
+        env_path = Path(args.env_file)
 # Load .env file if present
-load_env(Path(args.env_file))
+load_env(env_path)
 
 # Map GEMINI_API_TOKEN to GOOGLE_API_KEY when appropriate
 if 'GEMINI_API_TOKEN' in os.environ and 'GOOGLE_API_KEY' not in os.environ:
@@ -81,10 +87,13 @@ try:
 Task: {dataset}
 Location: ./machine_learning_engineering/tasks/{dataset}/
 
-Please build a high-quality machine learning pipeline for this classification task.
-The task files are already prepared in the tasks folder.
-
-Start by reading the task description and data files, then build an optimal pipeline.
+Please build a compact, runnable Python pipeline file that returns an unfitted scikit-learn Pipeline or estimator object.
+Important constraints:
+    - Do NOT inline or embed any dataset contents in the response (do not paste CSVs or data).
+    - Do NOT include long explanations: keep the output to the runnable Python file only.
+    - Prefer a single pipeline builder function named `build_full_pipeline()` or `create_model_pipeline()`.
+    - Return only valid Python code inside a single text/plain response (no markdown fences, no additional commentary, no large pasted datasets).
+    - Include minimal imports; make the code runnable if the MLE-STAR harness copies the file to the workspace.
 """
     
     print("\n📤 Sending task to MLE-STAR agent...")
@@ -93,6 +102,8 @@ Start by reading the task description and data files, then build an optimal pipe
     # Викликаємо агента using ADK Runner API
     print("⏳ Agent is processing (this may take 30 min - 2 hours)...\n")
     try:
+        # Change working dir to MLE-STAR agent root to ensure the agent finds its resources
+        os.chdir(mle_star_root)
         from google.adk.runners import InMemoryRunner
         from google.genai import types
         import asyncio
@@ -123,13 +134,60 @@ Start by reading the task description and data files, then build an optimal pipe
     print("="*80)
     
     # Перевіряємо workspace
-    workspace_dir = Path("./machine_learning_engineering/workspace") / dataset
-    if workspace_dir.exists():
+    workspace_base = Path("./machine_learning_engineering/workspace")
+    candidate_dirs = []
+    if workspace_base.exists():
+        candidate_dirs = [p for p in workspace_base.iterdir() if p.is_dir() and p.name.startswith(dataset)]
+    if not candidate_dirs:
+        # Reasonable fallbacks
+        candidate_dirs = [workspace_base / dataset]
+    found_any = False
+    for workspace_dir in candidate_dirs:
+        if not workspace_dir.exists():
+            continue
+        found_any = True
         print(f"\n✅ Workspace created: {workspace_dir}")
-        files = list(workspace_dir.glob("*.py"))
+        # Search recursively for generated pipelines (adk may write into nested subfolders)
+        files = list(workspace_dir.rglob("*.py"))
         print(f"   Generated files: {len(files)}")
         for f in files:
             print(f"   - {f.name}")
+        # Quick content inspection to ensure ablation steps are present
+        print('\n🔎 Inspecting generated pipeline files for required ablation-compatible steps...')
+        for f in files:
+            try:
+                content = f.read_text(encoding='utf-8')
+            except Exception:
+                content = ''
+            required = [
+                ('preprocessor', "preprocessor"),
+                ('feature_engineering', "feature_engineering"),
+                ('model', "model"),
+            ]
+            optional_ablation = [
+                ('tuning', 'GridSearchCV'),
+                ('tuning_prm2', 'RandomizedSearchCV'),
+                ('ensemble_voting', 'VotingClassifier'),
+                ('ensemble_stacking', 'StackingClassifier'),
+                ('ensemble_bagging', 'BaggingClassifier'),
+            ]
+            missing_required = [name for name, token in required if token not in content]
+            found_optional = [name for name, token in optional_ablation if token in content]
+            print(f"-- {f.name} --")
+            if missing_required:
+                print(f"   ⚠️ Missing required ablation step(s): {missing_required}")
+            else:
+                print("   ✅ Required steps present: preprocessor, feature_engineering, model")
+            if found_optional:
+                print(f"   ✅ Optional ablation components found: {found_optional}")
+            else:
+                print("   ℹ️ No optional ablation components (tuning/ensemble) detected; ablation configs such as --no_tuning, --no_ensemble may be no-ops")
+        # Run the quick inspection helper on the generated workspace
+        try:
+            inspect_cmd = [sys.executable, str(Path(__file__).parent / 'inspect_generated_pipelines.py'), '--dir', str(workspace_dir)]
+            subprocess.run(inspect_cmd)
+        except Exception as _:
+            pass
     else:
         print(f"\n⚠️  Workspace not found: {workspace_dir}")
     

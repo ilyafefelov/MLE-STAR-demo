@@ -71,7 +71,11 @@ class DatasetLoader:
         loader = DatasetLoader.BUILTIN_DATASETS[name]
         data = loader()
         # Convert to DataFrame to keep feature names and support ColumnTransformer
-        df = pd.DataFrame(data=data.data, columns=getattr(data, 'feature_names', None) or [f'f{i}' for i in range(data.data.shape[1])])
+        # Avoid ambiguous truth checks on arrays; explicitly handle feature_names
+        feature_names = getattr(data, 'feature_names', None)
+        if feature_names is None:
+            feature_names = [f'f{i}' for i in range(data.data.shape[1])]
+        df = pd.DataFrame(data=data.data, columns=feature_names)
         return df, data.target
     
     @staticmethod

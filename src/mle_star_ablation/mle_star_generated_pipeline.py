@@ -84,6 +84,7 @@ def _ensure_pipeline_object(obj: Any) -> Pipeline:
 
 
 def build_full_pipeline(
+    random_state: int = 42,
     numeric_features: Optional[List[str]] = None,
     categorical_features: Optional[List[str]] = None
 ) -> Pipeline:
@@ -125,7 +126,7 @@ def build_full_pipeline(
     # An alternative could be SelectKBest with chi2 if we wanted to select the most relevant features directly.
     # PolynomialFeatures could be used for non-linear relationships but might overfit the small Iris dataset.
     feature_engineering = Pipeline([
-        ('pca', PCA(n_components=0.95, random_state=42))
+        ('pca', PCA(n_components=0.95, random_state=random_state))
     ])
 
     # Model: RandomForestClassifier
@@ -137,7 +138,7 @@ def build_full_pipeline(
     model = RandomForestClassifier(
         n_estimators=100,
         max_depth=5,
-        random_state=42
+        random_state=random_state
     )
 
     # Combine all steps into a single pipeline.
@@ -238,6 +239,39 @@ def _set_n_jobs_on_estimator(estimator, n_jobs=1):
         pass
 
 
+def _set_random_state_on_estimator(estimator, random_state=42):
+    """Traverse an estimator or pipeline and set random_state where applicable.
+    This is a best-effort enforcement for determinism.
+    """
+    # If a pipeline, set for nested steps
+    if isinstance(estimator, Pipeline):
+        for _, nested in estimator.steps:
+            _set_random_state_on_estimator(nested, random_state=random_state)
+        return
+    # ColumnTransformer wrap nested transformers
+    if isinstance(estimator, ColumnTransformer):
+        for _, transformer, _ in estimator.transformers:
+            _set_random_state_on_estimator(transformer, random_state=random_state)
+        return
+    # If an ensemble with base estimator(s)
+    try:
+        params = estimator.get_params()
+        # If direct random_state argument is in params, try to set it
+        if 'random_state' in params:
+            try:
+                estimator.set_params(random_state=random_state)
+            except Exception:
+                pass
+        # Also try to set on known nested estimator names
+        for nested_name in ('estimator', 'base_estimator', 'final_estimator'):
+            if nested_name in params:
+                nested = params.get(nested_name)
+                if nested is not None:
+                    _set_random_state_on_estimator(nested, random_state=random_state)
+    except Exception:
+        pass
+
+
 def _replace_step(pipe: Pipeline, step_name: str, new_estimator) -> Pipeline:
     """
     Замінює один крок іншим estimator.
@@ -329,11 +363,22 @@ def build_pipeline(config, deterministic: bool = False, **kwargs) -> Pipeline:
         # Pipeline буде без кроку 'preprocessor'
     """
     # Отримуємо базовий pipeline від Gemini
+    import tempfile, os
+    # Run builder in a temporary directory to avoid local train.csv influencing builder behavior
     try:
-        base = _get_full_pipeline_callable()(**kwargs)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            old_cwd = os.getcwd()
+            os.chdir(tmpdir)
+            try:
+                base = _get_full_pipeline_callable()(**kwargs)
+            except TypeError:
+                # Fallback for older generated build_full_pipeline() that doesn't accept kwargs
+                base = _get_full_pipeline_callable()()
+            finally:
+                os.chdir(old_cwd)
     except TypeError:
-        # Fallback for older generated build_full_pipeline() that doesn't accept kwargs
-        base = _get_full_pipeline_callable()()
+        # One more fallback - in case tempdir context raised earlier
+        base = _get_full_pipeline_callable()(**kwargs)
     # Unwrap tuple/dict/global returns to ensure we have a Pipeline/estimator
     try:
         base = _ensure_pipeline_object(base)
@@ -380,6 +425,9 @@ def build_pipeline(config, deterministic: bool = False, **kwargs) -> Pipeline:
     # Якщо запитували детермінізм - намагаємось виставити n_jobs=1 скрізь
     if deterministic:
         _set_n_jobs_on_estimator(pipe, n_jobs=1)
+        # If the caller passed random_state in kwargs, respect it; else fallback to 42
+        rs = kwargs.get('random_state', 42)
+        _set_random_state_on_estimator(pipe, random_state=rs)
     
     return pipe
 
@@ -403,15 +451,35 @@ def inspect_pipeline(pipe: Pipeline) -> dict:
         ['scaler', 'feature_engineering', 'feature_selection', 'model']
     """
     from sklearn.preprocessing import StandardScaler
+    from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+    from sklearn.ensemble import VotingClassifier, StackingClassifier, BaggingClassifier
+
+    has_scaler = _step_contains_estimator(pipe, StandardScaler)
+    has_feature_engineering = _has_step(pipe, _STEP_NAMES['feature_engineering'])
+    has_feature_selection = _has_step(pipe, _STEP_NAMES.get('feature_selection', 'feature_selection'))
+    has_tuning = _step_contains_estimator(pipe, GridSearchCV) or _step_contains_estimator(pipe, RandomizedSearchCV)
+    has_ensembling = _step_contains_estimator(pipe, VotingClassifier) or _step_contains_estimator(pipe, StackingClassifier) or _step_contains_estimator(pipe, BaggingClassifier)
+
     return {
         'steps': [name for name, _ in pipe.steps],
         'n_steps': len(pipe.steps),
-        # scaler may be nested; try to find StandardScaler within steps
-        'has_scaler': _step_contains_estimator(pipe, StandardScaler),
-        'has_feature_engineering': _has_step(pipe, _STEP_NAMES['feature_engineering']),
-        'has_feature_selection': _has_step(pipe, _STEP_NAMES.get('feature_selection', 'feature_selection')),
+        'has_scaler': has_scaler,
+        'has_feature_engineering': has_feature_engineering,
+        'has_feature_selection': has_feature_selection,
+        'has_tuning': has_tuning,
+        'has_ensembling': has_ensembling,
         'model_type': type(pipe.steps[-1][1]).__name__ if pipe.steps else None,
     }
+
+
+def is_ablation_meaningful(pipe: Pipeline, required_min_components: int = 2) -> bool:
+    """Simple heuristic to decide whether ablation will be meaningful.
+    If the pipeline contains at least `required_min_components` of (scaler, feature_engineering, tuning, ensembling)
+    we return True.
+    """
+    info = inspect_pipeline(pipe)
+    comps = [info['has_scaler'], info['has_feature_engineering'], info['has_tuning'], info['has_ensembling']]
+    return sum(bool(x) for x in comps) >= required_min_components
 
 
 def print_pipeline_structure(pipe: Pipeline) -> None:
