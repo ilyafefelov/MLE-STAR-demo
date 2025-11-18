@@ -9,19 +9,64 @@ from sklearn.datasets import (
     load_breast_cancer, 
     load_wine, 
     load_digits, 
-    load_iris
+    load_iris,
+    load_diabetes,
+    make_classification,
+    make_regression,
+    make_friedman1
 )
+from sklearn.datasets import fetch_california_housing
+from sklearn.utils import Bunch
 from sklearn.model_selection import train_test_split
 
 
 class DatasetLoader:
     """Клас для завантаження та підготовки датасетів."""
-    
+
+    @staticmethod
+    def _make_synthetic_classification():
+        X, y = make_classification(
+            n_samples=1200,
+            n_features=25,
+            n_informative=18,
+            n_redundant=4,
+            n_classes=4,
+            class_sep=1.3,
+            flip_y=0.015,
+            random_state=123
+        )
+        feature_names = [f"synthetic_cls_{i}" for i in range(X.shape[1])]
+        return Bunch(data=X, target=y, feature_names=feature_names)
+
+    @staticmethod
+    def _make_synthetic_regression(name: str) -> Bunch:
+        presets = {
+            'synthetic_regression_easy': dict(n_samples=1500, n_features=20, n_informative=10, noise=5.0, random_state=101),
+            'synthetic_regression_medium': dict(n_samples=1500, n_features=30, n_informative=20, noise=15.0, random_state=202),
+            'synthetic_regression_hard': dict(n_samples=1800, n_features=40, n_informative=25, noise=25.0, random_state=303),
+        }
+        if name == 'synthetic_regression_nonlinear':
+            X, y = make_friedman1(n_samples=1500, n_features=25, noise=1.5, random_state=404)
+        else:
+            params = presets.get(name)
+            if params is None:
+                raise ValueError(f"Unknown synthetic regression preset: {name}")
+            X, y = make_regression(**params)
+        feature_names = [f"synthetic_reg_{i}" for i in range(X.shape[1])]
+        return Bunch(data=X, target=y, feature_names=feature_names)
+
     BUILTIN_DATASETS = {
         'breast_cancer': load_breast_cancer,
         'wine': load_wine,
         'digits': load_digits,
-        'iris': load_iris
+        'iris': load_iris,
+        'diabetes': load_diabetes,
+        'california-housing-prices': fetch_california_housing,
+        'synthetic_classification': lambda: DatasetLoader._make_synthetic_classification(),
+        'synthetic_regression_easy': lambda: DatasetLoader._make_synthetic_regression('synthetic_regression_easy'),
+        'synthetic_regression_medium': lambda: DatasetLoader._make_synthetic_regression('synthetic_regression_medium'),
+        'synthetic_regression_hard': lambda: DatasetLoader._make_synthetic_regression('synthetic_regression_hard'),
+        'synthetic_regression_nonlinear': lambda: DatasetLoader._make_synthetic_regression('synthetic_regression_nonlinear'),
     }
     
     @staticmethod
@@ -58,9 +103,18 @@ class DatasetLoader:
         # Базовий препроцесинг
         X, y = DatasetLoader._preprocess(X, y)
         
+        # For regression tasks, stratify cannot be used; detect continuity of target
+        stratify = None
+        try:
+            import numpy as np
+            if not np.issubdtype(np.asarray(y).dtype, np.floating):
+                stratify = y
+        except Exception:
+            stratify = None
+
         # Розбивка на train/test
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=random_state, stratify=y
+            X, y, test_size=test_size, random_state=random_state, stratify=stratify
         )
         
         return X_train, X_test, y_train, y_test

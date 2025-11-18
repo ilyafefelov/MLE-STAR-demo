@@ -66,6 +66,19 @@ Potential next steps (not yet implemented):
 - Automatic comparison across cycles (e.g., stability tracking per task/artifact type).
 - Additional metric parsing (F1, ROC AUC) if generated scripts print them.
 
+### Suite Result Aggregation
+Use `scripts/run_experiment_suite.py` whenever you need to execute the predefined ablation manifest (e.g., the 5 dataset × 3 run configuration used in this session). Once the suite finishes, consolidate every `summary_statistics_*.csv` under `results/` via `scripts/summarize_suite_results.py`:
+
+```bash
+# Aggregate and print the merged table
+python scripts/summarize_suite_results.py --print
+
+# Only keep the top configuration per experiment and emit a CSV
+python scripts/summarize_suite_results.py --best-only --output results/aggregated_best.csv
+```
+
+By default the script writes `results/aggregated_summary.csv` so downstream notebooks/reports can rely on a single canonical file instead of per-run folders.
+
 ### Troubleshooting
 | Issue | Cause | Mitigation |
 |-------|-------|------------|

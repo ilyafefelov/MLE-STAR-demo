@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.mle_star_ablation.config import get_standard_configs
 from src.mle_star_ablation.mle_star_generated_pipeline import build_pipeline
 from src.mle_star_ablation.datasets import DatasetLoader
-from src.mle_star_ablation.metrics import calculate_classification_metrics
+from src.mle_star_ablation.metrics import calculate_classification_metrics, calculate_regression_metrics
 from src.mle_star_ablation.stats import (
     generate_statistical_report,
     pairwise_comparison,
@@ -27,7 +27,7 @@ from src.mle_star_ablation.stats import (
 from src.mle_star_ablation.viz import create_all_plots
 
 
-def run_single_experiment(config, X_train, X_test, y_train, y_test, random_state=42, deterministic=False):
+def run_single_experiment(config, X_train, X_test, y_train, y_test, random_state=42, deterministic=False, is_regression=False):
     """
     Запускає один експеримент з заданою конфігурацією.
     
@@ -55,13 +55,16 @@ def run_single_experiment(config, X_train, X_test, y_train, y_test, random_state
         y_proba = None
     
     # Обчислення метрик
-    metrics = calculate_classification_metrics(y_test, y_pred, y_proba)
+    if is_regression:
+        metrics = calculate_regression_metrics(y_test, y_pred)
+    else:
+        metrics = calculate_classification_metrics(y_test, y_pred, y_proba)
     metrics['train_time'] = train_time
     
     return metrics
 
 
-def run_multiple_runs(config, dataset_name, csv_path, target_column, n_runs=5, base_seed: int = None, deterministic: bool = False):
+def run_multiple_runs(config, dataset_name, csv_path, target_column, n_runs=5, base_seed: int = None, deterministic: bool = False, forced_task_type: str = None):
     """
     Запускає кілька повторів експерименту з різними seed.
     
@@ -91,9 +94,21 @@ def run_multiple_runs(config, dataset_name, csv_path, target_column, n_runs=5, b
             random_state=random_state
         )
         
+        # Detect regression vs classification (unless forced)
+        is_regression = False
+        try:
+            # if target is continuous type (float) or many unique values, treat as regression
+            if forced_task_type is not None:
+                is_regression = True if forced_task_type == 'regression' else False
+            else:
+                if np.issubdtype(y_train.dtype, np.floating) or len(np.unique(y_train)) > 20:
+                    is_regression = True
+        except Exception:
+            is_regression = False
+
         # Запускаємо експеримент
         metrics = run_single_experiment(
-            config, X_train, X_test, y_train, y_test, random_state, deterministic=deterministic
+            config, X_train, X_test, y_train, y_test, random_state, deterministic=deterministic, is_regression=is_regression
         )
         
         metrics['run'] = run_idx + 1
@@ -176,6 +191,13 @@ def main():
         type=str,
         default=None,
         help='Optional path to a Python file with build_full_pipeline() to use (overrides module pipeline)'
+    )
+    parser.add_argument(
+        '--task-type',
+        type=str,
+        choices=['classification', 'regression'],
+        default=None,
+        help='Force the task type to classification or regression (overrides automatic detection)'
     )
     parser.add_argument(
         '--variant',
@@ -289,18 +311,44 @@ def main():
                 args.n_runs,
                 base_seed=args.seed
                 ,
-                deterministic=args.deterministic
+                deterministic=args.deterministic,
+                forced_task_type=args.task_type
             )
             
             # Збереження результатів
             all_results[config_name] = results
             
-            # Виведення середніх значень
-            avg_accuracy = np.mean([r['accuracy'] for r in results])
-            avg_f1 = np.mean([r['f1_score'] for r in results])
+            # Determine whether config is regression (use r2_score) or classification (use accuracy)
+            sample_metric = 'accuracy'
+            # If first run has 'r2_score' use that metric
+            # If user forced the task type, prefer that metric type
+            if args.task_type == 'regression':
+                if 'r2_score' in results[0]:
+                    sample_metric = 'r2_score'
+                elif 'rmse' in results[0]:
+                    sample_metric = 'rmse'
+                else:
+                    sample_metric = 'r2_score' if 'r2_score' in results[0] else 'rmse' if 'rmse' in results[0] else 'accuracy'
+            elif args.task_type == 'classification':
+                if 'accuracy' in results[0]:
+                    sample_metric = 'accuracy'
+                elif 'f1_score' in results[0]:
+                    sample_metric = 'f1_score'
+                else:
+                    sample_metric = 'accuracy'
+            else:
+                if 'r2_score' in results[0]:
+                    sample_metric = 'r2_score'
+                elif 'rmse' in results[0]:
+                    sample_metric = 'rmse'
+
+            avg_val = np.mean([r[sample_metric] for r in results])
             avg_time = np.mean([r['train_time'] for r in results])
-            
-            print(f"  → Accuracy: {avg_accuracy:.4f}, F1: {avg_f1:.4f}, Time: {avg_time:.2f}s")
+
+            if sample_metric == 'r2_score':
+                print(f"  → R2: {avg_val:.4f}, Time: {avg_time:.2f}s")
+            else:
+                print(f"  → {sample_metric.upper()}: {avg_val:.4f}, Time: {avg_time:.2f}s")
             
         except Exception as e:
             print(f"  ✗ Error: {e}")
@@ -329,8 +377,20 @@ def main():
     
     # Збереження підсумкової статистики
     print("\nCalculating summary statistics...")
+    # Determine primary metric to use for statistical comparisons (prefer R2 for regression)
+    metric_candidates = ['r2_score', 'accuracy', 'rmse']
+    selected_metric = None
+    # pick the first candidate that's present in results
+    for candidate in metric_candidates:
+        any_present = any(candidate in r for rs in all_results.values() for r in rs)
+        if any_present:
+            selected_metric = candidate
+            break
+    if selected_metric is None:
+        selected_metric = 'accuracy'
+
     results_dict = {
-        config_name: np.array([r['accuracy'] for r in results])
+        config_name: np.array([r[selected_metric] for r in results])
         for config_name, results in all_results.items()
     }
     
@@ -364,11 +424,13 @@ def main():
     if not args.no_plots:
         print("\nGenerating plots...")
         try:
+            # metric name used in plots
+            metric_name = 'Accuracy' if selected_metric == 'accuracy' else ('R2' if selected_metric == 'r2_score' else selected_metric.upper())
             create_all_plots(
                 results_dict,
                 comparison_df,
                 output_dir=str(output_dir),
-                metric_name='Accuracy'
+                metric_name=metric_name
             )
         except Exception as e:
             print(f"Warning: Could not create plots: {e}")
@@ -380,7 +442,7 @@ def main():
     print(f"\nBest configuration:")
     best_config = summary_df.iloc[0]
     print(f"  {best_config['configuration']}")
-    print(f"  Mean Accuracy: {best_config['mean']:.4f} ± {best_config['std']:.4f}")
+    print(f"  Mean {('R2' if selected_metric == 'r2_score' else selected_metric.upper())}: {best_config['mean']:.4f} ± {best_config['std']:.4f}")
     print(f"  95% CI: [{best_config['ci_lower']:.4f}, {best_config['ci_upper']:.4f}]")
     print()
     print(f"All results saved to: {output_dir}")
