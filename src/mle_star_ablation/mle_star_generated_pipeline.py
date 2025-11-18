@@ -23,6 +23,9 @@ https://github.com/google/adk-samples/tree/main/python/agents/machine-learning-e
 Автор: Фефелов Ілля Олександрович
 МАУП, 2025
 """
+# NOTE: This file may be updated by ADK/Gemini-generated code. Ensure the module
+# does not execute training code at import-time; keep build_full_pipeline as a pure factory
+# function and do not run `.fit()` at module top-level.
 
 from copy import deepcopy
 from typing import List, Optional, Any
@@ -88,14 +91,13 @@ def build_full_pipeline(
     numeric_features: Optional[List[str]] = None,
     categorical_features: Optional[List[str]] = None
 ) -> Pipeline:
-    """
-    Повертає повний ML-конвеєр, згенерований Gemini API для iris.
+    """    Повертає повний ML-конвеєр, згенерований Gemini API для iris.
     
     Pipeline складається з:
     1. Preprocessor: SimpleImputer + StandardScaler
     2. Feature Engineering: PCA (95% variance)
     3. Model: RandomForestClassifier
-    
+    чимось відповідає вимогам задачі класифікації на датасеті як наприклад:
     Згенеровано: Google Gemini 2.5 Flash Lite
     Датасет: iris (150 samples, 4 features, 3 classes)
     Дата: 2025-11-13 13:25:59
@@ -314,6 +316,79 @@ def _has_step(pipe: Pipeline, step_name: str) -> bool:
     return any(name == step_name for name, _ in pipe.steps)
 
 
+def _normalize_pipeline_step_names(pipe: Pipeline) -> Pipeline:
+    """
+    Normalize common step names into canonical step names used by ablation adapter.
+    This returns a new Pipeline where step names are mapped to canonical names if recognized.
+    Canonical steps: 'preprocessor', 'feature_engineering', 'model'
+    """
+    # Common synonyms mapping
+    name_synonyms = {
+        'preprocessor': ['preprocessor', 'scaler', 'imputer', 'preproc', 'pre_processing'],
+        'feature_engineering': ['feature_engineering', 'fe', 'pca', 'feature_eng', 'feature_engineer'],
+        'model': ['model', 'estimator', 'clf', 'regressor', 'modeling']
+    }
+
+    def canonical_name(name: str, est) -> str:
+        low = name.lower()
+        for canonical, synonyms in name_synonyms.items():
+            if low in synonyms:
+                return canonical
+        # Try to detect by estimator type
+        try:
+            from sklearn.decomposition import PCA
+            from sklearn.pipeline import Pipeline as SKPipeline
+            from sklearn.compose import ColumnTransformer
+        except Exception:
+            PCA = None
+            SKPipeline = None
+        # If the estimator is a pipeline with a PCA inside, mark as feature_engineering
+        if SKPipeline is not None and isinstance(est, SKPipeline):
+            for _, nested in est.steps:
+                try:
+                    if PCA is not None and isinstance(nested, PCA):
+                        return 'feature_engineering'
+                except Exception:
+                    pass
+        # If estimator is PCA directly
+        if PCA is not None:
+            try:
+                if isinstance(est, PCA):
+                    return 'feature_engineering'
+            except Exception:
+                pass
+        # Fallback: return original name
+        return name
+
+    new_steps = []
+    for name, estimator in pipe.steps:
+        new_name = canonical_name(name, estimator)
+        # If canonical_name returns same as original name, but we can also match common suffix/prefix
+        if new_name not in ('preprocessor', 'feature_engineering', 'model'):
+            lowered = name.lower()
+            if 'pca' in lowered or 'feature' in lowered or lowered == 'fe':
+                new_name = 'feature_engineering'
+            elif 'scale' in lowered or 'imputer' in lowered or 'pre' == lowered[:3]:
+                new_name = 'preprocessor'
+            elif 'model' in lowered or 'clf' in lowered or 'reg' in lowered:
+                new_name = 'model'
+        new_steps.append((new_name, estimator))
+    # Avoid duplicate step names by preserving order and skipping duplicates
+    seen = set()
+    deduped_steps = []
+    for name, est in new_steps:
+        if name in seen:
+            idx = 1
+            candidate = f"{name}_{idx}"
+            while candidate in seen:
+                idx += 1
+                candidate = f"{name}_{idx}"
+            name = candidate
+        seen.add(name)
+        deduped_steps.append((name, est))
+    return Pipeline(deduped_steps)
+
+
 def _step_contains_estimator(pipe: Pipeline, estimator_cls) -> bool:
     """
     Check if any step in the pipeline (or nested pipeline) contains an estimator of type estimator_cls.
@@ -386,6 +461,12 @@ def build_pipeline(config, deterministic: bool = False, **kwargs) -> Pipeline:
         warnings.warn(f"Could not extract pipeline object from builder: {e}")
         # Keep original - may raise later
     pipe = deepcopy(base)  # Копія, щоб не модифікувати оригінал
+    # Normalize step names so ablation toggles work regardless of step names from ADK
+    try:
+        pipe = _normalize_pipeline_step_names(pipe)
+    except Exception:
+        # If normalization fails, continue with original pipe
+        pass
     
     # Preprocessing (включає imputer + scaler)
     # use_scaling контролює весь preprocessing блок

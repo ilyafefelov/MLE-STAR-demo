@@ -41,3 +41,33 @@ tasks:
     type: regression
     metric: mse
     lower_is_better: true
+
+  diabetes:
+    type: regression
+    metric: r2_score
+    lower_is_better: false
+
+  synthetic_regression_easy:
+    type: regression
+    metric: r2_score
+    lower_is_better: false
+
+  synthetic_regression_medium:
+    type: regression
+    metric: r2_score
+    lower_is_better: false
+
+  synthetic_regression_hard:
+    type: regression
+    metric: r2_score
+    lower_is_better: false
+
+  synthetic_regression_nonlinear:
+    type: regression
+    metric: r2_score
+    lower_is_better: false
+
+  synthetic_classification:
+    type: classification
+    metric: accuracy
+    n_classes: 4

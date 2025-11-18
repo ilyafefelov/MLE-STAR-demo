@@ -275,7 +275,7 @@ def update_mle_star_pipeline(code: str, dataset_name: str, generated_file: Path 
     print(f"✅ Updated and validated {pipeline_file}")
 
 
-def run_ablation_for_dataset(dataset_name: str, n_runs: int = 5, base_seed: int = None, no_plots: bool = False, deterministic: bool = False) -> Dict:
+def run_ablation_for_dataset(dataset_name: str, n_runs: int = 5, base_seed: int = None, no_plots: bool = False, deterministic: bool = False, forced_task_type: str = None) -> Dict:
     """
     Запускає ablation аналіз для одного датасету.
     
@@ -301,7 +301,7 @@ def run_ablation_for_dataset(dataset_name: str, n_runs: int = 5, base_seed: int 
         
         try:
             config_results = run_multiple_runs(
-                config, dataset_name, None, None, n_runs, base_seed=base_seed, deterministic=deterministic
+                config, dataset_name, None, None, n_runs, base_seed=base_seed, deterministic=deterministic, forced_task_type=forced_task_type
             )
             results[config_name] = config_results
             
@@ -367,6 +367,13 @@ def main():
         action='store_true',
         help='Do not create plots while running main_experiment'
     )
+    parser.add_argument(
+        '--task-type',
+        type=str,
+        choices=['classification', 'regression'],
+        default=None,
+        help='Force the task type for run_ablation_for_dataset (overrides automatic detection)'
+    )
     
     args = parser.parse_args()
     
@@ -418,7 +425,7 @@ def main():
         
         # 2. Запуск ablation аналізу
         try:
-            results = run_ablation_for_dataset(dataset_name, args.n_runs, base_seed=args.seed, no_plots=args.no_plots, deterministic=args.deterministic)
+            results = run_ablation_for_dataset(dataset_name, args.n_runs, base_seed=args.seed, no_plots=args.no_plots, deterministic=args.deterministic, forced_task_type=args.task_type)
             all_dataset_results[dataset_name] = results
             
             # Збереження результатів для цього датасету

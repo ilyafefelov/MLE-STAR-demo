@@ -4,9 +4,9 @@
     from pathlib import Path
 
     # Load the generated module by path without running fit() automatically
-    spec = importlib.util.spec_from_file_location('gemini_live_iris', r'D:\School\GoIT\MAUP_REDO_HWs\Diploma\model_comparison_results\gemini_live_iris.py')
+    spec = importlib.util.spec_from_file_location('gemini_live_california-housing-prices', r'D:\School\GoIT\MAUP_REDO_HWs\Diploma\model_comparison_results\gemini_live_california-housing-prices.py')
     mod = importlib.util.module_from_spec(spec)
-    sys.modules['gemini_live_iris'] = mod
+    sys.modules['gemini_live_california-housing-prices'] = mod
     try:
         spec.loader.exec_module(mod)
     except Exception:
