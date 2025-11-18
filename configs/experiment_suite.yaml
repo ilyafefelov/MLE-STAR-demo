@@ -18,8 +18,6 @@ experiments:
     task_type: classification
     n_runs: 3
     seed: 41
-    extra_args:
-      - --no-plots
 
   - name: cls_wine
     description: "Gemini Flash-Lite pipeline on sklearn wine dataset"
@@ -29,8 +27,6 @@ experiments:
     task_type: classification
     n_runs: 3
     seed: 42
-    extra_args:
-      - --no-plots
 
   - name: cls_digits
     description: "Gemini Flash-Lite pipeline on sklearn digits dataset"
@@ -40,8 +36,6 @@ experiments:
     task_type: classification
     n_runs: 3
     seed: 43
-    extra_args:
-      - --no-plots
 
   - name: cls_iris
     description: "Gemini Flash-Lite pipeline on sklearn iris dataset"
@@ -51,8 +45,6 @@ experiments:
     task_type: classification
     n_runs: 3
     seed: 44
-    extra_args:
-      - --no-plots
 
   - name: cls_synthetic_balanced
     description: "Synthetic balanced classification benchmark"
@@ -62,8 +54,6 @@ experiments:
     task_type: classification
     n_runs: 3
     seed: 45
-    extra_args:
-      - --no-plots
 
   # Regression suite (5 datasets, n_runs=3)
   - name: reg_california
@@ -74,8 +64,6 @@ experiments:
     task_type: regression
     n_runs: 3
     seed: 51
-    extra_args:
-      - --no-plots
 
   - name: reg_diabetes
     description: "LightGBM-style wrapper on sklearn diabetes regression"
@@ -85,8 +73,6 @@ experiments:
     task_type: regression
     n_runs: 3
     seed: 52
-    extra_args:
-      - --no-plots
 
   - name: reg_synth_easy
     description: "Synthetic regression benchmark (low noise)"
@@ -96,8 +82,6 @@ experiments:
     task_type: regression
     n_runs: 3
     seed: 53
-    extra_args:
-      - --no-plots
 
   - name: reg_synth_medium
     description: "Synthetic regression benchmark (medium noise)"
@@ -107,8 +91,6 @@ experiments:
     task_type: regression
     n_runs: 3
     seed: 54
-    extra_args:
-      - --no-plots
 
   - name: reg_synth_nonlinear
     description: "Synthetic Friedman1-style nonlinear regression"
@@ -118,5 +100,3 @@ experiments:
     task_type: regression
     n_runs: 3
     seed: 55
-    extra_args:
-      - --no-plots

@@ -2,8 +2,8 @@
 
 **Автор:** Фефелов Ілля Олександрович  
 **Установа:** МАУП  
-**Дата:** 13.11.2025  
-**Версія:** 1.0
+**Дата:** 18.11.2025  
+**Версія:** 1.1
 
 ---
 
@@ -427,6 +427,16 @@
 
 ---
 
-**Дата останнього оновлення:** 13.11.2025  
-**Версія протоколу:** 1.0  
-**Статус:** ✅ Затверджено для виконання експериментів
+---
+
+## 13. Оновлення від 18.11.2025
+
+- ✅ Повна серія експериментів (5 класифікаційних + 5 регресійних задач, по 6 абляцій кожна) виконана через `scripts/run_experiment_suite.py --execute` з візуалізацією (MPLBACKEND=Agg).
+- ✅ Результати та графіки автоматично збережені під `results/<experiment>/<wrapper>/`, включно з `comparison_barplot.png`, `comparison_boxplot.png`, `comparison_violin.png`, `pvalue_heatmap.png`, `cohend_heatmap.png`, `summary_statistics_*.csv`, `pairwise_comparisons_*.csv`, `statistical_report_*.txt`.
+- ✅ Зведена таблиця для всіх 60 конфігурацій записана до `results/aggregated_summary.csv` командою `python scripts/summarize_suite_results.py --print` для подальших дипломних таблиць/доповідей.
+- ℹ️ Regression експерименти наразі використовують LightGBM-подібний wrapper `model_comparison_results/gemini_live_california-housing-prices_pipeline_wrapper.py`; перфоманс стабільний (напр., `reg_california` R²≈0.78), але за потреби можна додати окремі wrapper-и для кожного датасету.
+- ℹ️ Під час валідації `scripts/check_wrapper_importable.py --dir model_comparison_results` усі `_pipeline_wrapper.py` модулі успішно зібрані в sklearn pipelines; сирі Gemini файли можуть вимагати середовищ (CSV, `generated_pipelines/`), що відповідає очікуваним обмеженням.
+
+**Дата останнього оновлення:** 18.11.2025  
+**Версія протоколу:** 1.1  
+**Статус:** ✅ Експеримент виконано, результати агреговано, звіти готові до включення в диплом/демо
