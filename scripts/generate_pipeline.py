@@ -59,13 +59,21 @@ def main():
         print('Agent script failed; check logs and API access.')
         sys.exit(proc.returncode)
 
-    # Find generated .py files under the workspace
-    workspace_dir = Path('adk-samples/python/agents/machine-learning-engineering/workspace') / dataset
-    if not workspace_dir.exists():
-        print(f'Workspace not found: {workspace_dir}')
+    # Find generated .py files under the workspace base; agent may use dataset-specific folder variants
+    workspace_base = Path('adk-samples/python/agents/machine-learning-engineering/workspace')
+    if not workspace_base.exists():
+        print(f'Workspace not found: {workspace_base}')
         sys.exit(1)
 
-    py_files = list(workspace_dir.glob('*.py'))
+    candidate_dirs = [p for p in workspace_base.iterdir() if p.is_dir() and p.name.startswith(dataset)]
+    if not candidate_dirs:
+        print(f'No workspace directories found for dataset prefix {dataset} under {workspace_base}')
+        sys.exit(1)
+
+    # Agent may place files in subfolders; search recursively within candidate workspace dirs
+    py_files = []
+    for cd in candidate_dirs:
+        py_files.extend(list(cd.rglob('*.py')))
     if len(py_files) == 0:
         print(f'No Python files generated in workspace: {workspace_dir}')
         sys.exit(1)

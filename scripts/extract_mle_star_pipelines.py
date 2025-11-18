@@ -31,6 +31,9 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
+import importlib.util
+import sys
+from src.mle_star_ablation import mle_star_generated_pipeline as mgp
 
 # Root to ADK MLE-STAR workspace (relative to repo root)
 WORKSPACE_ROOT = (
@@ -111,6 +114,37 @@ def extract_run(task: str, run_dir: Path, outdir: Path, include_candidates: bool
             shutil.copy2(py_file, final_dest)
             entry["destination"] = str(final_dest)
             print(f"✅ Copied {py_file.name} -> {final_dest.name}")
+            # Try to import and inspect the copied file to ensure it contains expected components
+            try:
+                spec = importlib.util.spec_from_file_location(final_dest.stem, str(final_dest))
+                module = importlib.util.module_from_spec(spec)
+                sys.modules[spec.name] = module
+                spec.loader.exec_module(module)
+                # Find a possible builder function
+                candidates = ['build_full_pipeline', 'create_model_pipeline', 'create_pipeline']
+                builder = None
+                for cand in candidates:
+                    if hasattr(module, cand):
+                        builder = getattr(module, cand)
+                        break
+                if builder is not None:
+                    try:
+                        pipeline = None
+                        try:
+                            pipeline = builder(random_state=42)
+                        except TypeError:
+                            pipeline = builder()
+                        pipeline = mgp._ensure_pipeline_object(pipeline)
+                        info = mgp.inspect_pipeline(pipeline)
+                        print(f"   🔎 Inspect: steps={info['steps']}, has_scaler={info['has_scaler']}, has_feature_engineering={info['has_feature_engineering']}, has_tuning={info['has_tuning']}, has_ensembling={info['has_ensembling']}")
+                        if not mgp.is_ablation_meaningful(pipeline):
+                            print(f"   ⚠️  Warning: Pipeline seems to lack enough ablation-sensitive components (scaler/feature_engineering/tuning/ensembling). Consider regenerating with a stronger prompt.")
+                    except Exception as e:
+                        print(f"   ⚠️  Inspect failed for {final_dest.name}: {e}")
+                else:
+                    print(f"   ⚠️  No builder found in {final_dest.name}; skipping inspection.")
+            except Exception as e:
+                print(f"   ⚠️  Could not import/inspect copied file {final_dest.name}: {e}")
 
     if include_candidates:
         candidates_dir = run_dir / "model_candidates"
