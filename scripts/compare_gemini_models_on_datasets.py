@@ -49,10 +49,6 @@ def generate_pipeline_code(model_name: str, dataset_name: str, api_key: str) -> 
 Generate a complete scikit-learn ML pipeline for the '{dataset_name}' dataset.
 
 Dataset Information:
-- Samples: {dataset_info['n_samples']}
-- Features: {dataset_info['n_features']}
-- Classes: {dataset_info['n_classes']}
-- Task: Classification
 
 Requirements:
 1. Create a Pipeline with these steps:
@@ -61,10 +57,11 @@ Requirements:
    - 'model': Choose BEST model from: LogisticRegression, RandomForestClassifier, 
      SVC, GradientBoostingClassifier, MLPClassifier
 
-2. Return ONLY Python function code:
+2. Return ONLY Python function code with EXACT signature:
+    `def build_full_pipeline(random_state: int = 42, numeric_features: Optional[List[str]] = None, categorical_features: Optional[List[str]] = None) -> Pipeline:`
 
 ```python
-def build_full_pipeline():
+def build_full_pipeline(random_state: int = 42, numeric_features: Optional[List[str]] = None, categorical_features: Optional[List[str]] = None) -> Pipeline:
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler
     from sklearn.impute import SimpleImputer
@@ -96,12 +93,17 @@ def build_full_pipeline():
 4. Use random_state=42
 5. Choose SOPHISTICATED model - not just LogisticRegression!
 6. Tune hyperparameters for this specific dataset
+7. ENSURE the pipeline includes at least two of the following components: 'preprocessor' (impute + scaling), 'feature_engineering' (PCA/Poly/SelectKBest), and 'tuning' (GridSearch or RandomizedSearch). This is to ensure ablation has measurable effects.
 
 Generate ONLY code, no explanations outside.
 """
     
     start_time = time.time()
-    response = model.generate_content(prompt)
+    # Deterministic generation parameters if supported (fallback)
+    try:
+        response = model.generate_content(prompt, temperature=0, top_p=1)
+    except TypeError:
+        response = model.generate_content(prompt)
     generation_time = time.time() - start_time
     
     code = response.text

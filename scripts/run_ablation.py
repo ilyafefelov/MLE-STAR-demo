@@ -27,7 +27,7 @@ from src.mle_star_ablation.stats import (
 from src.mle_star_ablation.viz import create_all_plots
 
 
-def run_single_experiment(config, X_train, X_test, y_train, y_test, random_state=42):
+def run_single_experiment(config, X_train, X_test, y_train, y_test, random_state=42, deterministic=False):
     """
     Запускає один експеримент з заданою конфігурацією.
     
@@ -39,7 +39,7 @@ def run_single_experiment(config, X_train, X_test, y_train, y_test, random_state
     Returns:
         dict: Результати експерименту
     """
-    pipeline = build_pipeline(config)
+    pipeline = build_pipeline(config, random_state=random_state, deterministic=deterministic)
     
     start_time = time.time()
     pipeline.fit(X_train, y_train)
@@ -61,7 +61,7 @@ def run_single_experiment(config, X_train, X_test, y_train, y_test, random_state
     return metrics
 
 
-def run_multiple_runs(config, dataset_name, csv_path, target_column, n_runs=5):
+def run_multiple_runs(config, dataset_name, csv_path, target_column, n_runs=5, base_seed: int = None, deterministic: bool = False):
     """
     Запускає кілька повторів експерименту з різними seed.
     
@@ -78,7 +78,10 @@ def run_multiple_runs(config, dataset_name, csv_path, target_column, n_runs=5):
     all_results = []
     
     for run_idx in range(n_runs):
-        random_state = 42 + run_idx
+        if base_seed is not None:
+            random_state = base_seed + run_idx
+        else:
+            random_state = 42 + run_idx
         
         # Завантажуємо дані з новим seed
         X_train, X_test, y_train, y_test = DatasetLoader.load_dataset(
@@ -90,7 +93,7 @@ def run_multiple_runs(config, dataset_name, csv_path, target_column, n_runs=5):
         
         # Запускаємо експеримент
         metrics = run_single_experiment(
-            config, X_train, X_test, y_train, y_test, random_state
+            config, X_train, X_test, y_train, y_test, random_state, deterministic=deterministic
         )
         
         metrics['run'] = run_idx + 1
@@ -158,6 +161,17 @@ def main():
         help='Детальний вивід'
     )
     parser.add_argument(
+        '--seed',
+        type=int,
+        default=None,
+        help='Optional base seed for deterministic runs'
+    )
+    parser.add_argument(
+        '--deterministic',
+        action='store_true',
+        help='Attempt to enforce deterministic runs (set threads to 1, seed RNGs)'
+    )
+    parser.add_argument(
         '--pipeline-file',
         type=str,
         default=None,
@@ -173,6 +187,19 @@ def main():
     
     args = parser.parse_args()
     
+    # Set deterministic mode if requested
+    if args.seed is not None:
+        import random
+        import numpy as np
+        random.seed(args.seed)
+        np.random.seed(args.seed)
+    if args.deterministic:
+        # Try to force single-threaded BLAS to reduce non-determinism
+        import os
+        os.environ['OMP_NUM_THREADS'] = '1'
+        os.environ['OPENBLAS_NUM_THREADS'] = '1'
+        os.environ['MKL_NUM_THREADS'] = '1'
+
     # Dynamic pipeline file registration logic
     pipeline_file = args.pipeline_file
     if args.variant and not pipeline_file:
@@ -259,7 +286,10 @@ def main():
                 args.dataset,
                 args.csv_path,
                 args.target,
-                args.n_runs
+                args.n_runs,
+                base_seed=args.seed
+                ,
+                deterministic=args.deterministic
             )
             
             # Збереження результатів

@@ -66,11 +66,13 @@ class DatasetLoader:
         return X_train, X_test, y_train, y_test
     
     @staticmethod
-    def _load_builtin(name: str) -> Tuple[np.ndarray, np.ndarray]:
+    def _load_builtin(name: str) -> Tuple[pd.DataFrame, np.ndarray]:
         """Завантажує вбудований датасет sklearn."""
         loader = DatasetLoader.BUILTIN_DATASETS[name]
         data = loader()
-        return data.data, data.target
+        # Convert to DataFrame to keep feature names and support ColumnTransformer
+        df = pd.DataFrame(data=data.data, columns=getattr(data, 'feature_names', None) or [f'f{i}' for i in range(data.data.shape[1])])
+        return df, data.target
     
     @staticmethod
     def _load_csv(
@@ -101,7 +103,7 @@ class DatasetLoader:
             )
         
         y = df[target_column].values
-        X = df.drop(columns=[target_column]).values
+        X = df.drop(columns=[target_column])
         
         return X, y
     
@@ -117,23 +119,34 @@ class DatasetLoader:
         Returns:
             Tuple[X_clean, y_clean]
         """
-        # Перевірка на NaN
-        if np.isnan(X).any():
-            print("Warning: NaN values detected in features. Removing rows with NaN...")
+        # Перевірка на NaN: use pandas utilities if DataFrame, otherwise numpy
+        try:
+            import pandas as pd
+            if isinstance(X, pd.DataFrame):
+                mask = ~X.isna().any(axis=1)
+            else:
+                mask = ~np.isnan(X).any(axis=1)
+        except Exception:
             mask = ~np.isnan(X).any(axis=1)
+        if mask is not None and (mask.sum() < len(mask)):
+            print("Warning: NaN values detected in features. Removing rows with NaN...")
             X = X[mask]
             y = y[mask]
         
         if np.isnan(y).any():
             print("Warning: NaN values detected in target. Removing rows with NaN...")
-            mask = ~np.isnan(y)
-            X = X[mask]
-            y = y[mask]
+            mask_y = ~np.isnan(y)
+            X = X[mask_y]
+            y = y[mask_y]
         
         # Перевірка на inf
-        if np.isinf(X).any():
-            print("Warning: Inf values detected in features. Replacing with max finite value...")
-            X = np.nan_to_num(X, nan=0.0, posinf=np.finfo(np.float64).max, neginf=np.finfo(np.float64).min)
+        # Replace infinite values if any
+        try:
+            if np.isinf(np.asarray(X)).any():
+                print("Warning: Inf values detected in features. Replacing with max finite value...")
+                X = np.nan_to_num(X, nan=0.0, posinf=np.finfo(np.float64).max, neginf=np.finfo(np.float64).min)
+        except Exception:
+            pass
         
         return X, y
     

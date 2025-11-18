@@ -69,7 +69,7 @@ Requirements:
 2. Return ONLY the Python function code that builds the pipeline:
 
 ```python
-def build_full_pipeline():
+def build_full_pipeline(random_state: int = 42, numeric_features: Optional[List[str]] = None, categorical_features: Optional[List[str]] = None) -> Pipeline:
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler
     from sklearn.impute import SimpleImputer
@@ -110,7 +110,11 @@ Generate ONLY the function code, no explanations outside the code.
     
     start_time = time.time()
     try:
-        response = model.generate_content(prompt)
+        # Deterministic generation to reduce variance across runs (fallback)
+        try:
+            response = model.generate_content(prompt, temperature=0, top_p=1)
+        except TypeError:
+            response = model.generate_content(prompt)
         generation_time = time.time() - start_time
         
         # Витягуємо код

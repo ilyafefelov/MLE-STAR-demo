@@ -49,6 +49,7 @@ def run_single_config(
     random_state: int = 42,
     task_type: str = "classification",
     scoring: Optional[List[str]] = None,
+    deterministic: bool = False,
 ) -> Dict[str, Any]:
     """
     Запускає один експеримент з заданою конфігурацією.
@@ -87,7 +88,7 @@ def run_single_config(
     
     # Побудова pipeline
     try:
-        pipeline = build_pipeline(config)
+        pipeline = build_pipeline(config, random_state=random_state)
     except Exception as e:
         warnings.warn(f"Помилка побудови pipeline для {config.name}: {e}")
         return {
@@ -101,6 +102,8 @@ def run_single_config(
     start_time = time.time()
     
     try:
+        # When deterministic is requested, avoid parallel jobs which can introduce nondeterminism
+        n_jobs = 1 if deterministic else -1
         cv_results = cross_validate(
             pipeline, 
             X, 
@@ -108,7 +111,7 @@ def run_single_config(
             cv=cv,
             scoring=scoring,
             return_train_score=True,
-            n_jobs=-1,  # Паралелізація
+            n_jobs=n_jobs,
             error_score='raise'
         )
         elapsed_time = time.time() - start_time
@@ -158,6 +161,7 @@ def run_ablation_suite(
     random_state: int = 42,
     task_type: str = "classification",
     verbose: bool = True,
+    deterministic: bool = False,
 ) -> pd.DataFrame:
     """
     Запускає повний набір абляційних експериментів.
@@ -218,6 +222,7 @@ def run_ablation_suite(
                 n_folds=n_folds,
                 random_state=seed,
                 task_type=task_type
+                , deterministic=deterministic
             )
             
             # Додаємо інформацію про повтор

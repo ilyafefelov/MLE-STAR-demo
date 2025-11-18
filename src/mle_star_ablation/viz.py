@@ -19,7 +19,8 @@ def plot_comparison_barplot(
     results_dict: Dict[str, np.ndarray],
     metric_name: str = 'Accuracy',
     figsize: tuple = (12, 6),
-    save_path: Optional[str] = None
+    save_path: Optional[str] = None,
+    show: bool = False,
 ):
     """
     Створює барчарт з довірчими інтервалами для порівняння конфігурацій.
@@ -68,8 +69,10 @@ def plot_comparison_barplot(
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"Plot saved to {save_path}")
-    
-    plt.show()
+    if show:
+        plt.show()
+    # Close figure to avoid resource leak and blocking
+    plt.close(fig)
 
 
 def plot_boxplot(
@@ -77,6 +80,7 @@ def plot_boxplot(
     metric_name: str = 'Accuracy',
     figsize: tuple = (12, 6),
     save_path: Optional[str] = None
+    , show: bool = False
 ):
     """
     Створює boxplot для порівняння розподілів.
@@ -122,8 +126,9 @@ def plot_boxplot(
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"Plot saved to {save_path}")
-    
-    plt.show()
+    if show:
+        plt.show()
+    plt.close(fig)
 
 
 def plot_violin(
@@ -131,6 +136,7 @@ def plot_violin(
     metric_name: str = 'Accuracy',
     figsize: tuple = (12, 6),
     save_path: Optional[str] = None
+    , show: bool = False
 ):
     """
     Створює violin plot для детального аналізу розподілів.
@@ -173,8 +179,9 @@ def plot_violin(
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"Plot saved to {save_path}")
-    
-    plt.show()
+    if show:
+        plt.show()
+    plt.close(fig)
 
 
 def plot_heatmap(
@@ -182,6 +189,7 @@ def plot_heatmap(
     metric: str = 'p_value',
     figsize: tuple = (10, 8),
     save_path: Optional[str] = None
+    , show: bool = False
 ):
     """
     Створює heatmap для попарних порівнянь.
@@ -226,8 +234,9 @@ def plot_heatmap(
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"Plot saved to {save_path}")
-    
-    plt.show()
+    if show:
+        plt.show()
+    plt.close(fig)
 
 
 def plot_ablation_impact(
@@ -236,6 +245,7 @@ def plot_ablation_impact(
     metric_name: str = 'accuracy',
     figsize: tuple = (10, 6),
     save_path: Optional[str] = None
+    , show: bool = False
 ):
     """
     Візуалізує вплив додавання кожного компонента відносно baseline.
@@ -285,8 +295,9 @@ def plot_ablation_impact(
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"Plot saved to {save_path}")
-    
-    plt.show()
+    if show:
+        plt.show()
+    plt.close(fig)
 
 
 def create_all_plots(
@@ -312,32 +323,37 @@ def create_all_plots(
     # Барчарт
     plot_comparison_barplot(
         results_dict, metric_name,
-        save_path=output_path / 'comparison_barplot.png'
+        save_path=output_path / 'comparison_barplot.png',
+        show=False
     )
     
     # Boxplot
     plot_boxplot(
         results_dict, metric_name,
-        save_path=output_path / 'comparison_boxplot.png'
+        save_path=output_path / 'comparison_boxplot.png',
+        show=False
     )
     
     # Violin plot
     plot_violin(
         results_dict, metric_name,
-        save_path=output_path / 'comparison_violin.png'
+        save_path=output_path / 'comparison_violin.png',
+        show=False
     )
     
     # Heatmap (якщо є порівняння)
     if comparison_df is not None and len(comparison_df) > 0:
         plot_heatmap(
             comparison_df, metric='p_value',
-            save_path=output_path / 'pvalue_heatmap.png'
+            save_path=output_path / 'pvalue_heatmap.png',
+            show=False
         )
         
         if 'cohen_d' in comparison_df.columns:
             plot_heatmap(
                 comparison_df, metric='cohen_d',
-                save_path=output_path / 'cohend_heatmap.png'
+                save_path=output_path / 'cohend_heatmap.png',
+                show=False
             )
     
     print(f"All plots saved to {output_dir}/")
