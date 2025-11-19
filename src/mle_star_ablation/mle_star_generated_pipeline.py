@@ -199,19 +199,27 @@ def _unwrap_ensemble(estimator):
     """If estimator is an ensemble (VotingClassifier/Stacking), pick an appropriate
     single estimator fallback so the ablation can run without ensemble.
     """
-    if isinstance(estimator, VotingClassifier):
-        # Use the first estimator in the list
-        if estimator.estimators and len(estimator.estimators) > 0:
+    # Handle both classifier and regressor ensemble types
+    try:
+        from sklearn.ensemble import VotingRegressor, StackingRegressor, BaggingRegressor
+    except Exception:
+        VotingRegressor = StackingRegressor = BaggingRegressor = None
+
+    # Voting (classifier/regressor)
+    if isinstance(estimator, VotingClassifier) or (VotingRegressor is not None and isinstance(estimator, VotingRegressor)):
+        if getattr(estimator, 'estimators', None) and len(estimator.estimators) > 0:
             return estimator.estimators[0][1]
-    if isinstance(estimator, StackingClassifier):
-        # If stacking, return the final_estimator or the first base estimator as fallback
+
+    # Stacking (classifier/regressor)
+    if isinstance(estimator, StackingClassifier) or (StackingRegressor is not None and isinstance(estimator, StackingRegressor)):
         if hasattr(estimator, 'final_estimator') and estimator.final_estimator is not None:
             return estimator.final_estimator
-        elif estimator.estimators and len(estimator.estimators) > 0:
+        elif getattr(estimator, 'estimators', None) and len(estimator.estimators) > 0:
             return estimator.estimators[0][1]
-    if isinstance(estimator, BaggingClassifier):
-        # For bagging, use the base estimator
-        return estimator.base_estimator
+
+    # Bagging (classifier/regressor)
+    if isinstance(estimator, BaggingClassifier) or (BaggingRegressor is not None and isinstance(estimator, BaggingRegressor)):
+        return getattr(estimator, 'base_estimator', estimator)
     return estimator
 
 
@@ -473,7 +481,28 @@ def build_pipeline(config, deterministic: bool = False, **kwargs) -> Pipeline:
     if not config.use_scaling:
         preprocessor_name = _STEP_NAMES['preprocessor']
         if _has_step(pipe, preprocessor_name):
-            pipe = _remove_step(pipe, preprocessor_name)
+            # If the preprocessor is itself a Pipeline (e.g. imputer + scaler),
+            # remove only the scaler step and keep the imputer to avoid
+            # dropping preprocessing entirely (which can produce NaNs).
+            for name, est in pipe.steps:
+                if name == preprocessor_name:
+                    try:
+                        from sklearn.pipeline import Pipeline as SKPipeline
+                    except Exception:
+                        SKPipeline = None
+                    if SKPipeline is not None and isinstance(est, SKPipeline):
+                        # keep nested steps that are not scalers
+                        new_pre_steps = [(n, e) for n, e in est.steps if 'scale' not in n.lower()]
+                        if len(new_pre_steps) > 0:
+                            new_pre = SKPipeline(new_pre_steps)
+                            pipe = _replace_step(pipe, preprocessor_name, new_pre)
+                        else:
+                            # if nothing remains, remove the whole preprocessor
+                            pipe = _remove_step(pipe, preprocessor_name)
+                    else:
+                        # fallback: original behavior
+                        pipe = _remove_step(pipe, preprocessor_name)
+                    break
     
     # Інженерія ознак (PCA в нашому випадку)
     if not config.use_feature_engineering:
@@ -539,7 +568,19 @@ def inspect_pipeline(pipe: Pipeline) -> dict:
     has_feature_engineering = _has_step(pipe, _STEP_NAMES['feature_engineering'])
     has_feature_selection = _has_step(pipe, _STEP_NAMES.get('feature_selection', 'feature_selection'))
     has_tuning = _step_contains_estimator(pipe, GridSearchCV) or _step_contains_estimator(pipe, RandomizedSearchCV)
-    has_ensembling = _step_contains_estimator(pipe, VotingClassifier) or _step_contains_estimator(pipe, StackingClassifier) or _step_contains_estimator(pipe, BaggingClassifier)
+    # detect both classifier and regressor ensemble types
+    try:
+        from sklearn.ensemble import VotingRegressor, StackingRegressor, BaggingRegressor
+    except Exception:
+        VotingRegressor = StackingRegressor = BaggingRegressor = None
+    has_ensembling = (
+        _step_contains_estimator(pipe, VotingClassifier)
+        or (VotingRegressor is not None and _step_contains_estimator(pipe, VotingRegressor))
+        or _step_contains_estimator(pipe, StackingClassifier)
+        or (StackingRegressor is not None and _step_contains_estimator(pipe, StackingRegressor))
+        or _step_contains_estimator(pipe, BaggingClassifier)
+        or (BaggingRegressor is not None and _step_contains_estimator(pipe, BaggingRegressor))
+    )
 
     return {
         'steps': [name for name, _ in pipe.steps],

@@ -1,0 +1,27 @@
+digraph ExperimentFlow {
+	fontsize=12 rankdir=LR
+	node [color="#2f2f2f" fillcolor="#fdfdfd" fontname=Helvetica shape=box style="rounded,filled"]
+	suite [label="run_experiment_suite.py
+(manifest)"]
+	ablation [label="run_ablation.py
+(ablation loops)"]
+	dataset [label="DatasetLoader
+(src/mle_star_ablation/datasets.py)"]
+	wrapper [label="Pipeline Wrapper
+(model_comparison_results/*_pipeline_wrapper.py)"]
+	adapter [label="Adapter
+(src/mle_star_ablation/mle_star_generated_pipeline.py)"]
+	pipeline [label="Sklearn Pipeline
+(fit / predict)"]
+	metrics [label="Metrics & Analysis
+(summary, pairwise)"]
+	results [label="results/<exp>/*
+(csv, png, txt)"]
+	suite -> ablation
+	ablation -> dataset
+	ablation -> wrapper [label="imports/ registers"]
+	wrapper -> adapter [label="build_full_pipeline()"]
+	adapter -> pipeline [label="build_pipeline(config)"]
+	pipeline -> metrics
+	metrics -> results
+}
