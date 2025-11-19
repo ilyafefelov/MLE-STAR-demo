@@ -3,7 +3,7 @@
 
 global:
   output_dir: results
-  n_runs: 3
+  n_runs: 20
   deterministic: true
   base_seed: 42
   python: null  # Override interpreter if needed, e.g. "C:/Python313/python.exe"
@@ -16,7 +16,7 @@ experiments:
     dataset: breast_cancer
     pipeline_file: model_comparison_results/gemini_2.5_flash_lite_breast_cancer_pipeline_wrapper.py
     task_type: classification
-    n_runs: 3
+    n_runs: 20
     seed: 41
 
   - name: cls_wine
@@ -25,7 +25,7 @@ experiments:
     dataset: wine
     pipeline_file: model_comparison_results/gemini_2.5_flash_lite_wine_pipeline_wrapper.py
     task_type: classification
-    n_runs: 3
+    n_runs: 20
     seed: 42
 
   - name: cls_digits
@@ -34,7 +34,7 @@ experiments:
     dataset: digits
     pipeline_file: model_comparison_results/gemini_2.5_flash_lite_digits_pipeline_wrapper.py
     task_type: classification
-    n_runs: 3
+    n_runs: 20
     seed: 43
 
   - name: cls_iris
@@ -43,7 +43,7 @@ experiments:
     dataset: iris
     pipeline_file: model_comparison_results/gemini_2.5_flash_lite_iris_pipeline_wrapper.py
     task_type: classification
-    n_runs: 3
+    n_runs: 20
     seed: 44
 
   - name: cls_synthetic_balanced
@@ -52,7 +52,7 @@ experiments:
     dataset: synthetic_classification
     pipeline_file: model_comparison_results/gemini_2.5_flash_lite_digits_pipeline_wrapper.py
     task_type: classification
-    n_runs: 3
+    n_runs: 20
     seed: 45
 
   # Regression suite (5 datasets, n_runs=3)
@@ -62,7 +62,7 @@ experiments:
     dataset: california-housing-prices
     pipeline_file: model_comparison_results/gemini_live_california-housing-prices_pipeline_wrapper.py
     task_type: regression
-    n_runs: 3
+    n_runs: 20
     seed: 51
 
   - name: reg_diabetes
@@ -71,7 +71,7 @@ experiments:
     dataset: diabetes
     pipeline_file: model_comparison_results/gemini_live_california-housing-prices_pipeline_wrapper.py
     task_type: regression
-    n_runs: 3
+    n_runs: 20
     seed: 52
 
   - name: reg_synth_easy
@@ -80,7 +80,7 @@ experiments:
     dataset: synthetic_regression_easy
     pipeline_file: model_comparison_results/gemini_live_california-housing-prices_pipeline_wrapper.py
     task_type: regression
-    n_runs: 3
+    n_runs: 20
     seed: 53
 
   - name: reg_synth_medium
@@ -89,7 +89,7 @@ experiments:
     dataset: synthetic_regression_medium
     pipeline_file: model_comparison_results/gemini_live_california-housing-prices_pipeline_wrapper.py
     task_type: regression
-    n_runs: 3
+    n_runs: 20
     seed: 54
 
   - name: reg_synth_nonlinear
@@ -98,5 +98,5 @@ experiments:
     dataset: synthetic_regression_nonlinear
     pipeline_file: model_comparison_results/gemini_live_california-housing-prices_pipeline_wrapper.py
     task_type: regression
-    n_runs: 3
+    n_runs: 20
     seed: 55
