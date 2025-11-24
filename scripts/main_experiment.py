@@ -30,6 +30,7 @@ from src.mle_star_ablation.config import get_standard_configs
 from src.mle_star_ablation.datasets import DatasetLoader
 from src.mle_star_ablation.metrics import calculate_classification_metrics
 from src.mle_star_ablation.ast_utils import inject_random_state_into_build_fn
+from src.mle_star_ablation.prompts import PromptBuilder
 from scripts.validate_generated_pipeline import validate_pipeline_file
 
 
@@ -63,83 +64,15 @@ def generate_pipeline_with_gemini(dataset_name: str, api_key: str) -> str:
     dataset_info = DatasetLoader.get_dataset_info(dataset_name)
     
     # Промпт для генерації
-    prompt = f"""
-Generate a complete scikit-learn ML pipeline for the '{dataset_name}' dataset.
-
-Dataset Information:
-- Samples: {dataset_info['n_samples']}
-- Features: {dataset_info['n_features']}
-- Classes: {dataset_info['n_classes']}
-- Task: Classification
-
-Requirements:
-1. Create a Pipeline with these steps:
-   - 'preprocessor': Handle missing values and scaling (Pipeline with SimpleImputer + StandardScaler)
-   - 'feature_engineering': Dimensionality reduction or feature extraction (PCA, SelectKBest, PolynomialFeatures, etc.)
-   - 'model': Choose the BEST classification model for this dataset from:
-     * LogisticRegression (good for linearly separable data)
-     * RandomForestClassifier (robust, handles non-linearity well)
-     * SVC with RBF kernel (excellent for complex decision boundaries)
-     * GradientBoostingClassifier (high accuracy, ensemble method)
-     * MLPClassifier (neural network for complex patterns)
-
-2. Return ONLY the Python function code that builds the pipeline:
-
-```python
-def build_full_pipeline():
-    from sklearn.pipeline import Pipeline
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.impute import SimpleImputer
-    from sklearn.decomposition import PCA
-    from sklearn.ensemble import RandomForestClassifier  # or your choice
-    # ... other imports
+    builder = PromptBuilder(dataset_name, dataset_info)
+    builder.add_role_context()
+    builder.add_task_description()
+    builder.add_dataset_info()
+    builder.add_requirements()
+    builder.add_output_format()
+    builder.add_constraints()
     
-    preprocessor = Pipeline([
-        ('imputer', SimpleImputer(strategy='mean')),
-        ('scaler', StandardScaler())
-    ])
-    
-    feature_engineering = Pipeline([
-        ('pca', PCA(n_components=0.95, random_state=42))  # or your choice
-    ])
-    
-    # Choose model based on dataset characteristics:
-    # - Small dataset (< 200 samples): SVC or LogisticRegression
-    # - Medium dataset (200-2000): RandomForest or GradientBoosting
-    # - Large dataset (> 2000): MLPClassifier or GradientBoosting
-    # - Many features (> 50): RandomForest or GradientBoosting
-    model = RandomForestClassifier(
-        n_estimators=100,
-        max_depth=10,
-        random_state=42
-    )  # Example - choose best for this dataset!
-    
-    return Pipeline([
-        ('preprocessor', preprocessor),
-        ('feature_engineering', feature_engineering),
-        ('model', model)
-    ])
-```
-
-3. Add detailed comments explaining:
-   - Why you chose THIS SPECIFIC MODEL over others for this dataset
-   - What hyperparameters you selected and why
-   - How dataset size/features influenced your model choice
-   - Expected performance characteristics
-
-4. Use random_state=42 where applicable
-5. Choose APPROPRIATE and SOPHISTICATED model - not just LogisticRegression!
-6. Consider dataset size and complexity when choosing model
-7. Tune hyperparameters based on dataset characteristics
-
-IMPORTANT: Choose the BEST model for this specific dataset based on:
-- Dataset size ({dataset_info['n_samples']} samples)
-- Feature count ({dataset_info['n_features']} features)
-- Number of classes ({dataset_info['n_classes']} classes)
-- Complexity of decision boundaries (infer from dataset name)
-
-Generate ONLY the function code, no explanations outside the code.
-"""
+    prompt = builder.build()
     
     print(f"\n📡 Generating pipeline for {dataset_name} via Gemini API (deterministic generation: temperature=0, top_p=1)...")
     # Force deterministic generation (temperature=0) to improve reproducibility

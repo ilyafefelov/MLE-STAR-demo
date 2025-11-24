@@ -166,7 +166,47 @@ def inject_random_state_into_file(src_path: str, dst_path: Optional[str] = None)
     return out_path
 
 
+class LeakageDetector(ast.NodeVisitor):
+    """Detects potential data leakage in pipeline construction code.
+    
+    Rule: The `build_full_pipeline` function should NOT call `.fit()` or `.fit_transform()`.
+    It should only construct the pipeline. Fitting happens later in the runner.
+    """
+    def __init__(self):
+        self.leakage_found = False
+        self.leakage_nodes = []
+
+    def visit_Call(self, node: ast.Call):
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ('fit', 'fit_transform'):
+                self.leakage_found = True
+                self.leakage_nodes.append(node)
+        self.generic_visit(node)
+
+
+def detect_data_leakage(source: str) -> bool:
+    """
+    Analyzes source code for data leakage (calls to .fit() or .fit_transform() 
+    inside the build function).
+    
+    Args:
+        source: Python source code string
+        
+    Returns:
+        bool: True if leakage is detected, False otherwise.
+    """
+    try:
+        tree = ast.parse(source)
+        detector = LeakageDetector()
+        detector.visit(tree)
+        return detector.leakage_found
+    except Exception:
+        # If we can't parse, we can't detect. Assume safe or handle elsewhere.
+        return False
+
+
 __all__ = [
     'inject_random_state_into_build_fn',
     'inject_random_state_into_file',
+    'detect_data_leakage',
 ]
