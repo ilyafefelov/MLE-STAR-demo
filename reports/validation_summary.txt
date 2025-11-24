@@ -1,0 +1,16 @@
+Validation summary for the current run (2025-11-17)
+
+- Registered pipelines found in logs/variants_n10.log: 12 entries (3 variants × 4 datasets)
+- Generated pipeline files used: model_comparison_results/gemini_2.5_*_{dataset}.py (12 files)
+- Results directories created under results/:
+  - results/breast_cancer_flash_lite_n5/flash_lite
+  - results/wine_flash_lite_n5/flash_lite
+  - results/digits_flash_lite_n5/flash_lite
+  - results/iris_flash_lite_n5/flash_lite
+  - (plus similar folders for flash_n5, pro_n5 and variants_n10)
+- Aggregated CSVs:
+  - reports/table1_model_comparison.csv (rows: dataset × variant)
+  - reports/table2_ablation.csv (rows: dataset × variant × configuration × n_runs)
+- Figures saved in: reports/figures/*.png
+
+All above verified on the local workspace. See `reports/confirmation.txt` and `reports/confirmation_sergeant.txt` for explicit confirmation.

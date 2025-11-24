@@ -1,152 +1,129 @@
-# MLE-STAR Customer Churn Prediction
+# Ablation Analysis of ML Pipelines Generated via Gemini API / Абляційний аналіз компонентів ML-пайплайна
 
-This project implements an advanced machine learning pipeline using the **MLE-STAR agentic workflow** to automate end-to-end customer churn prediction for telecom companies.
-
-## 🌟 Features
-
-- **Autonomous Pipeline**: Self-optimizing ML pipeline with minimal human intervention
-- **State-of-the-Art Approaches**: Integrates latest churn prediction methodologies
-- **Iterative Refinement**: Component-wise optimization and ablation studies
-- **Ensemble Strategies**: Multiple model combination for improved performance
-- **Robustness Checking**: Built-in data leakage and error detection
-- **Comprehensive Reporting**: Detailed performance metrics and process logs
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.11+
-- Dependencies (automatically installed):
-  - scikit-learn, pandas, numpy, matplotlib, seaborn
-  - xgboost, lightgbm (for advanced models)
-  - Optional: langchain, crewai, fastapi (for full agentic framework)
-
-### Installation
-```bash
-git clone <your-repo>
-cd MLE-STAR-demo
-pip install -r requirements.txt
-```
-
-### Usage
-1. **Place your dataset**: Add `telecom_churn.csv` to the `data/` folder (optional - sample data will be generated)
-2. **Run the pipeline**:
-   ```bash
-   python solution.py
-   ```
-3. **Review results**: Check `report.md` and `process_log.md` for detailed analysis
-
-## 📊 Latest Results
-
-### Model Performance
-- **F1-Score**: 0.4889 (Primary metric)
-- **Accuracy**: 65.50%
-- **Precision**: 55.93%
-- **Recall**: 43.42%
-
-### Best Performing Models
-1. **XGBoost**: F1-Score = 0.5278
-2. **Tuned Random Forest**: F1-Score = 0.4812
-3. **Weighted Ensemble**: F1-Score = 0.4889 (Final model)
-
-## 🏗️ Project Structure
-
-```
-MLE-STAR-demo/
-├── solution.py           # Main MLE-STAR pipeline
-├── data/
-│   └── telecom_churn.csv # Dataset (auto-generated if missing)
-├── report.md             # Performance summary
-├── process_log.md        # Detailed process log
-├── requirements.txt      # Python dependencies
-└── README.md            # This file
-```
-
-## 🔧 MLE-STAR Components
-
-### 1. Web Search Simulation
-- Analyzes state-of-the-art approaches
-- Identifies optimal ML strategies
-
-### 2. Targeted Refinement
-- Component-wise optimization
-- Preprocessing pipeline tuning
-- Feature selection strategies
-
-### 3. Ensemble Generation
-- Multiple candidate model creation
-- Voting and weighted ensemble strategies
-- Performance-based model selection
-
-### 4. Robustness Checking
-- Data leakage detection
-- Error handling and debugging
-- Data usage validation
-
-### 5. Ablation Studies
-- Feature importance analysis
-- Component impact assessment
-- Performance attribution
-
-## 📈 Key Features
-
-- **Automated Feature Engineering**: Creates interaction terms, encodings, and derived features
-- **Multiple Algorithm Support**: Random Forest, XGBoost, LightGBM, Gradient Boosting, SVM, Logistic Regression
-- **Hyperparameter Optimization**: Grid search and random search strategies
-- **Cross-Validation**: Stratified k-fold validation for robust evaluation
-- **Interpretability Focus**: Prioritizes explainable models when performance is comparable
-
-## 🎯 Optimization Goals
-
-- **Primary**: F1-Score maximization (handles class imbalance)
-- **Secondary**: Accuracy, Precision, Recall reporting
-- **Tertiary**: Model interpretability and business insights
-
-## 📋 Process Log Highlights
-
-The MLE-STAR pipeline automatically logs:
-- Each refinement iteration
-- Model performance comparisons  
-- Feature engineering decisions
-- Ensemble strategy evolution
-- Data quality checks
-- Ablation study results
-
-## 🔍 Data Requirements
-
-Expected CSV format with churn prediction features:
-- Customer demographics (Age, Gender)
-- Service usage (Tenure, Monthly Charges)
-- Contract details (Contract type, Payment method)
-- Target variable: `Churn` (0/1)
-
-## 🛠️ Customization
-
-Modify `solution.py` to:
-- Change target column name
-- Adjust feature engineering strategies
-- Add new model types
-- Modify ensemble approaches
-- Update evaluation metrics
-
-## 📚 References
-
-- **MLE-STAR Framework**: [Google ADK Samples](https://github.com/google/adk-samples/tree/main/python/agents/machine-learning-engineering)
-- **Agent Development Kit**: Google's ADK for agentic ML workflows
-- **Multi-Agent Orchestration**: CrewAI framework integration
-- **LangChain Integration**: For advanced agent reasoning capabilities
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch
-3. Add new MLE-STAR components
-4. Test with sample datasets
-5. Submit pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
+> 🧠 **Master's Thesis / Дипломна робота магістра**  
+> **Student / Студент:** Ilya Fefelov / Фефелов Ілля Олександрович  
+> **Group / Група:** ІК-9-24-М1ІПЗ (1.6д)-ІТ  
+> **Supervisor / Науковий керівник:** PhD Dmytro Chernyshov / к.т.н. Дмитро Чернишов  
+> **Institution / Заклад:** IAPM / МАУП  
+> **Practice Base / База практики:** GO IT EDUCATION LLC / ТОВ "ГОУ АЙТІ ЕДЬЮКЕЙШЕН"
 
 ---
 
-**Built with the MLE-STAR agentic workflow for autonomous machine learning engineering.**
+## 🇬🇧 English Version
+
+### 📖 Project Description
+
+This project investigates the impact of individual Machine Learning pipeline components on model quality through **ablation analysis**.
+
+**Core Idea:**
+1.  **Generate** optimal ML pipelines using **Gemini API** (Google Generative AI).
+2.  **Execute** the code automatically in a controlled environment.
+3.  **Analyze** component contribution by systematically disabling them (Ablation Study).
+4.  **Validate** results statistically (N=20 runs, 95% Confidence Intervals).
+
+**Inspiration:**  
+Based on the **MLE-STAR** (Machine Learning Engineering with Multiple Agents) approach by Google Research ([arXiv:2506.15692](https://www.arxiv.org/abs/2506.15692)). Unlike the full multi-agent system, this project focuses on the **ablation analysis** of pipelines generated by a single efficient agent.
+
+### ✅ Key Results (Updated Nov 24, 2025)
+
+#### 1. "Over-engineering" Hypothesis Confirmed
+Experiments on the **Diabetes** dataset (N=20 runs) confirmed that complex pipelines often degrade performance.
+-   **Minimal Configuration** (Model only): **High Stability** (Narrow 95% CI).
+-   **Full Pipeline** (with Feature Engineering): Lower or equal performance in **10/10 cases**.
+-   **Conclusion:** Gemini tends to generate overly complex solutions (Feature Engineering, Ensembling) that are not always necessary for tabular data.
+
+#### 2. Model Selection: Gemini 2.5 Flash Lite
+-   **Winner:** `gemini-2.5-flash-lite`
+-   **Speed:** 4.07s (6.6× faster than Pro)
+-   **Accuracy:** 94.21% (Difference with Pro is statistically insignificant, p=0.68)
+-   **Efficiency:** Best Cost-Benefit ratio.
+
+#### 3. Statistical Validity
+-   **Robustness:** All final experiments were conducted with **N=20** repetitions.
+-   **Stability:** The resulting 95% Confidence Intervals are narrow, indicating high reproducibility of the generated pipelines.
+
+### 🚀 Quick Start
+
+```bash
+# 1. Clone repository
+git clone https://github.com/ilyafefelov/MLE-STAR-demo.git
+cd MLE-STAR-demo
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Set API Key
+# Windows PowerShell
+$env:GEMINI_API_KEY="your_api_key_here"
+# Linux/Mac
+export GEMINI_API_KEY="your_api_key_here"
+
+# 4. Run Experiment
+python scripts/main_experiment.py --datasets diabetes --n-runs 20
+```
+
+---
+
+## 🇺🇦 Українська версія
+
+### 📖 Опис проєкту
+
+Цей проєкт досліджує вплив окремих компонентів ML-конвеєра на якість моделей машинного навчання через **абляційний аналіз**.
+
+**Основна ідея:**
+1.  **Використовуємо Gemini API** для автоматичної генерації ML-пайплайнів.
+2.  **Автоматично виконуємо** згенерований код.
+3.  **Проводимо абляційний аналіз**: послідовно вимикаємо компоненти (Feature Engineering, Scaling, Tuning).
+4.  **Статистично оцінюємо** результати (N=20 прогонів, 95% довірчі інтервали).
+
+**Натхнення:**  
+Проєкт базується на підході **MLE-STAR** від Google Research. Ми адаптували його для фокусування на **дослідженні надлишковості** (over-engineering) в автоматично згенерованому коді.
+
+### ✅ Ключові результати (Оновлено 24.11.2025)
+
+#### 1. Підтвердження гіпотези "Over-engineering"
+Експерименти на датасеті **Diabetes** (N=20) показали, що складні пайплайни часто працюють гірше за прості.
+-   **Minimal Configuration** (Тільки модель): Демонструє високу стабільність та точність.
+-   **Full Pipeline** (З інженерією ознак): У **10 з 10 випадків** не дав приросту або погіршив результат.
+-   **Висновок:** LLM схильні генерувати надмірно складні рішення, які не завжди потрібні для табличних даних.
+
+#### 2. Вибір моделі: Gemini 2.5 Flash Lite
+-   **Обрано:** `gemini-2.5-flash-lite`
+-   **Швидкість:** 4.07с (в 6.6× швидше за Pro версію).
+-   **Точність:** 94.21% (Різниця з Pro статистично незначуща).
+
+#### 3. Статистична валідність
+-   **Надійність:** Фінальні експерименти проведені з **N=20** повторами.
+-   **Стабільність:** Отримані вузькі довірчі інтервали (Confidence Intervals) свідчать про високу відтворюваність результатів.
+
+### 🏗️ Структура проєкту
+
+```
+diploma/
+├── README.md                            # Цей файл / This file
+├── requirements.txt                     # Dependencies
+├── src/                                 # Source code
+│   ├── mle_star_generated_pipeline.py   # 🔥 Code generated by Gemini
+│   └── ...
+├── scripts/                             # Execution scripts
+│   ├── main_experiment.py               # 🚀 Main entry point
+│   └── plot_ci_demonstration.py         # Visualization generation
+├── reports/                             # Final docs
+│   ├── practice_report.md               # Звіт практики
+│   ├── tezy_final.md                    # Наукові тези
+│   └── ci_validity_plot.png             # Visualization artifact
+└── results_full_experiment/             # Raw data (CSV)
+```
+
+### 🎓 Для диплому
+
+**Теза дослідження:**  
+Сучасні LLM генерують робочий, але часто **надлишковий** код для ML-задач. Абляційний аналіз дозволяє автоматично виявити та видалити непотрібні компоненти (наприклад, зайвий Feature Engineering), підвищуючи прозорість та ефективність моделі без втрати якості.
+
+---
+
+## 📧 Contacts / Контакти
+
+**Ilya Fefelov / Фефелов Ілля**  
+**GitHub:** [ilyafefelov/MLE-STAR-demo](https://github.com/ilyafefelov/MLE-STAR-demo)  
+**Date:** November 24, 2025
