@@ -76,3 +76,7 @@ tmp/
 temp/
 *.tmp
 adk-samples
+
+# Private reports
+reports/tezy_final*
+reports/thesis_*
