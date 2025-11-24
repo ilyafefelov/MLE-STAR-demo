@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>tezy_final.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="%D0%B5%D0%BC%D0%BF%D1%96%D1%80%D0%B8%D1%87%D0%BD%D0%B0-%D0%B2%D0%B0%D0%BB%D1%96%D0%B4%D0%B0%D1%86%D1%96%D1%8F-%D1%82%D0%B0-%D0%B0%D0%B1%D0%BB%D1%8F%D1%86%D1%96%D0%B9%D0%BD%D0%B5-%D0%B4%D0%BE%D1%81%D0%BB%D1%96%D0%B4%D0%B6%D0%B5%D0%BD%D0%BD%D1%8F-automl-%D0%BF%D0%B0%D0%B9%D0%BF%D0%BB%D0%B0%D0%B9%D0%BD%D1%96%D0%B2">ЕМПІРИЧНА ВАЛІДАЦІЯ ТА АБЛЯЦІЙНЕ ДОСЛІДЖЕННЯ AutoML-ПАЙПЛАЙНІВ</h1>
+<p><strong>УДК 004.852:004.896</strong><br>
+<strong>ІНФОРМАЦІЙНІ ТЕХНОЛОГІЇ ТА МАШИННЕ НАВЧАННЯ</strong></p>
+<p><strong>ЕМПІРИЧНА ВАЛІДАЦІЯ ТА АБЛЯЦІЙНЕ ДОСЛІДЖЕННЯ AutoML-ПАЙПЛАЙНІВ, ЗГЕНЕРОВАНИХ LLM-АГЕНТАМИ: КІЛЬКІСНЕ ПІДТВЕРДЖЕННЯ ГІПОТЕЗИ &quot;НАДМІРНОГО УСКЛАДНЕННЯ&quot; (OVER-ENGINEERING)</strong></p>
+<p><strong>Автор:</strong> Фефелов Ілля Олександрович, магістрант, Міжрегіональна академія управління персоналом, м. Київ<br>
+<strong>Науковий керівник:</strong> Кавун Сергій Віталійович, д.т.н., професор</p>
+<hr>
+<h4 id="%D0%B0%D0%BD%D0%BE%D1%82%D0%B0%D1%86%D1%96%D1%8F">Анотація</h4>
+<p>Активне застосування великих мовних моделей (LLM) у парадигмі MLE-STAR (Machine Learning Engineering Agent via Search and Targeted Refinement) значно автоматизує створення конвеєрів машинного навчання (AutoML). Однак існує гіпотеза, що LLM-агенти схильні до надмірного ускладнення (Over-engineering), генеруючи надлишкові або навіть шкідливі компоненти. Метою роботи є кількісна перевірка цієї гіпотези шляхом компонентного Ablation-аналізу ML-пайплайнів, згенерованих моделлю Gemini 2.5 Flash Lite.
+Дослідження базувалося на серії з $N=20$ повторних запусків для 10 датасетів, використовуючи метрики Accuracy та $R^2$, а також статистичні критерії (ANOVA, t-test, Cohen's d) для оцінки внеску кожного компонента. Результати підтвердили гіпотезу Over-engineering у <strong>10 з 10</strong> проаналізованих випадків, демонструючи, що спрощені конфігурації (наприклад, <code>minimal</code> або <code>no_feature_engineering</code>) регулярно перевершують &quot;повні&quot; пайплайни, згенеровані LLM, зокрема через невдале ансамблювання та надмірну інженерію ознак. Це обґрунтовує критичну необхідність ітеративної валідації LLM-згенерованого коду.</p>
+<hr>
+<h4 id="%D0%B2%D1%81%D1%82%D1%83%D0%BF">Вступ</h4>
+<p>Стрімке зростання складності систем машинного навчання та їхнє використання у високоризикових доменах, таких як освітній аналіз даних (EDM), вимагає забезпечення інтерпретованості та прозорості (XAI). Ablation-дослідження (вивчення системи шляхом видалення її частин) є потужним науковим методом для досягнення цієї мети. Цей підхід дозволяє встановити причинно-наслідковий зв'язок і визначити внесок окремого компонента.
+В контексті AutoML, інтеграція великих мовних моделей (LLM) для генерації повних ML-конвеєрів прискорила розробку, але створила нову проблему: схильність LLM до побудови надто складних, хоча й синтаксично коректних, рішень. Раніше проведений пілотний аналіз на $N=3$ повторах вже засвідчив, що інженерія ознак (наприклад, PCA) часто погіршує результати. Це спонукало до розширення досліджень для кількісної валідації на більшій вибірці.</p>
+<h4 id="%D0%BC%D0%B5%D1%82%D0%BE%D0%B4%D0%BE%D0%BB%D0%BE%D0%B3%D1%96%D1%87%D0%BD%D0%B0-%D0%BE%D1%81%D0%BD%D0%BE%D0%B2%D0%B0-%D0%B4%D0%BE%D1%81%D0%BB%D1%96%D0%B4%D0%B6%D0%B5%D0%BD%D0%BD%D1%8F">Методологічна основа дослідження</h4>
+<p><strong>2.1 Дизайн Ablation-дослідження</strong>
+Дослідження базувалося на порівнянні шести стандартизованих конфігурацій ML-конвеєра: <code>full</code> (повний пайплайн, згенерований LLM-агентом), <code>minimal</code>, <code>no_scaling</code>, <code>no_feature_engineering</code>, <code>no_tuning</code> та <code>no_ensemble</code>. Кожна конфігурація являла собою систематичне видалення одного або декількох компонентів з повного пайплайна.
+В ролі LLM-архітектора виступав <strong>Gemini 2.5 Flash Lite</strong>, обраний як оптимальний trade-off між швидкістю та точністю.</p>
+<p><strong>2.2 Метрики та статистичний апарат</strong>
+Для оцінки ефективності моделей використовувалися Accuracy (класифікація) та коефіцієнт детермінації $R^2$ (регресія). Ключовим аналітичним інструментом була зміна середньоквадратичної похибки ($\Delta MSE$):</p>
+<p>$$ \Delta MSE = MSE_{Ablated} - MSE_{Baseline} $$</p>
+<ul>
+<li>Велике позитивне $\Delta MSE$ (або падіння Accuracy/$R^2$) підтверджує, що видалений компонент був <strong>критично необхідним</strong>.</li>
+<li>Незначна або негативна $\Delta MSE$ (або зростання Accuracy/$R^2$) свідчить про <strong>надмірність (Over-engineering)</strong>.</li>
+</ul>
+<p>Для забезпечення статистичної валідності було проведено $N=20$ повторних запусків, що дозволило розрахувати 95%-довірчі інтервали (CI).</p>
+<h4 id="%D1%80%D0%B5%D0%B7%D1%83%D0%BB%D1%8C%D1%82%D0%B0%D1%82%D0%B8-%D1%82%D0%B0-%D0%BA%D1%96%D0%BB%D1%8C%D0%BA%D1%96%D1%81%D0%BD%D1%96-%D0%B4%D0%BE%D0%BA%D0%B0%D0%B7%D0%B8">Результати та кількісні докази</h4>
+<p><strong>3.1 Кількісне підтвердження гіпотези Over-engineering</strong>
+Аналіз результатів підтвердив гіпотезу Over-engineering для всіх 10 проаналізованих датасетів. У кожному випадку найвищий показник якості був досягнутий спрощеною конфігурацією.</p>
+<p><strong>Таблиця 1. Кількісне порівняння спрощених та повних конфігурацій (Вибірка, N=20)</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Датасет</th>
+<th style="text-align:left">Найкраща конфігурація</th>
+<th style="text-align:left">Score</th>
+<th style="text-align:left">Full Pipeline Score</th>
+<th style="text-align:left">Різниця ($\Delta$)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>reg_synth_nonlinear</strong></td>
+<td style="text-align:left"><code>minimal</code> ($R^2$)</td>
+<td style="text-align:left"><strong>0.851</strong></td>
+<td style="text-align:left">0.443</td>
+<td style="text-align:left">+0.408</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>reg_california</strong></td>
+<td style="text-align:left"><code>minimal</code> ($R^2$)</td>
+<td style="text-align:left"><strong>0.844</strong></td>
+<td style="text-align:left">0.637</td>
+<td style="text-align:left">+0.207</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>cls_iris</strong></td>
+<td style="text-align:left"><code>no_fe</code> (Accuracy)</td>
+<td style="text-align:left"><strong>0.963</strong></td>
+<td style="text-align:left">0.908</td>
+<td style="text-align:left">+0.055</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>reg_diabetes</strong></td>
+<td style="text-align:left"><code>no_fe</code> ($R^2$)</td>
+<td style="text-align:left"><strong>0.469</strong></td>
+<td style="text-align:left">0.400</td>
+<td style="text-align:left">+0.069</td>
+</tr>
+</tbody>
+</table>
+<p><strong>3.2 Анатомія Over-engineering: Критичні випадки</strong></p>
+<p><strong>1. &quot;Саботаж ансамблюванням&quot; (California Housing):</strong>
+Найбільш драматичний приклад. Повна конфігурація (<code>full</code>) включала ансамбль <code>VotingRegressor</code> (<code>LGBM</code> + <code>LinearRegression</code>) та PCA. Ця надлишкова складність знизила якість з $R^2=0.844$ (для <code>minimal</code>) до $R^2=0.637$.</p>
+<p><img src="../results/reg_california/gemini_live_california-housing-prices_pipeline_wrapper/statistical_overview.png" alt="California Housing Overview">
+<em>Рис. 1. Статистичний огляд для California Housing. Чітко видно провал повної конфігурації (full) порівняно з minimal.</em></p>
+<p><strong>2. Прихована складність (Diabetes):</strong>
+Навіть у складніших задачах, таких як Diabetes, спрощена модель (<code>no_feature_engineering</code>) перевершила повну на 0.069 пункту $R^2$, що стало очевидним лише при збільшенні вибірки до $N=20$.</p>
+<p><img src="../results/reg_diabetes/gemini_live_diabetes_pipeline_wrapper/statistical_overview.png" alt="Diabetes Overview">
+<em>Рис. 2. Статистичний огляд для Diabetes. Перевага спрощених моделей підтверджується на великій вибірці запусків.</em></p>
+<p><strong>3.3 Критична необхідність Preprocessing</strong>
+Хоча інженерія ознак часто виявлялася зайвою, масштабування даних (<code>scaling</code>) підтвердило свою критичність. Для датасету Breast Cancer відключення масштабування призвело до падіння точності на 10.4%.</p>
+<p><img src="../results/cls_breast_cancer/gemini_2.5_flash_lite_breast_cancer_pipeline_wrapper/statistical_overview.png" alt="Breast Cancer Overview">
+<em>Рис. 3. Вплив компонентів на Breast Cancer. Видно критичне падіння метрик для конфігурації no_scaling.</em></p>
+<h4 id="%D0%B2%D0%B8%D1%81%D0%BD%D0%BE%D0%B2%D0%BE%D0%BA">Висновок</h4>
+<p>Проведене дослідження надає кількісне підтвердження Гіпотези Надмірного Ускладнення. LLM-агенти схильні до проектування неоптимальної складності, додаючи компоненти (PCA, ансамблювання), які часто погіршують результат. Практичні рекомендації включають впровадження механізму &quot;Early Stopping&quot; для генерації пайплайнів: якщо проста модель (<code>minimal</code>) демонструє високий результат, слід уникати подальшого ускладнення архітектури.</p>
+<h4 id="%D1%81%D0%BF%D0%B8%D1%81%D0%BE%D0%BA-%D0%B2%D0%B8%D0%BA%D0%BE%D1%80%D0%B8%D1%81%D1%82%D0%B0%D0%BD%D0%B8%D1%85-%D0%B4%D0%B6%D0%B5%D1%80%D0%B5%D0%BB">Список використаних джерел</h4>
+<ol>
+<li>Nam, J., Yoon, J., Chen, J., Shin, J., Arık, S. Ö., &amp; Pfister, T. (2025). <em>MLE-STAR: Machine Learning Engineering Agent via Search and Targeted Refinement</em>. arXiv preprint arXiv:2506.15692.</li>
+<li>Trirat, P., Jeong, W., &amp; Hwang, S. J. (2025). <em>AutoML-Agent: A Multi-Agent LLM Framework for Full-Pipeline AutoML</em>. In <em>Forty-second International Conference on Machine Learning</em>.</li>
+<li>Tornede, T., et al. (2025). <em>A practical evaluation of AutoML tools for binary, multiclass, and regression problems</em>. <em>Scientific Reports</em>, 15, 2149.</li>
+<li>Kohavi, R. (1995). <em>A Study of Cross-Validation and Bootstrap for Accuracy Estimation and Model Selection</em>. In <em>IJCAI</em> (Vol. 14, No. 2, pp. 1137-1143).</li>
+</ol>
+
+</body>
+</html>
