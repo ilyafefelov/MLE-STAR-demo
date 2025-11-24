@@ -1,0 +1,38 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run MLE-STAR Pipeline",
+			"type": "shell",
+			"command": "python",
+			"args": ["solution.py"],
+			"options": {
+				"shell": {
+					"executable": "C:/Program Files/Python313/python.exe"
+				}
+			},
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			}
+		},
+		{
+			"label": "Install Dependencies",
+			"type": "shell",
+			"command": "python",
+			"args": ["-m", "pip", "install", "-r", "requirements.txt"],
+			"options": {
+				"shell": {
+					"executable": "C:/Program Files/Python313/python.exe"
+				}
+			},
+			"group": "build",
+			"problemMatcher": []
+		}
+	]
+}

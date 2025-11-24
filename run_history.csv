@@ -1,0 +1,2 @@
+timestamp,dataset_name,f1_score,accuracy,precision,recall,final_model,best_scaler,best_feature_selector
+20250804_111200,churn-bigml-80.csv,0.8405797101449275,0.9588014981273408,0.9666666666666667,0.7435897435897436,VotingClassifier,standard,selectkbest_15
