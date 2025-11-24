@@ -25,6 +25,8 @@ from src.mle_star_ablation.stats import (
     summarize_statistics
 )
 from src.mle_star_ablation.viz import create_all_plots
+from src.mle_star_ablation.ast_utils import detect_data_leakage
+from src.mle_star_ablation.ablation_runner import run_baseline_config
 
 
 def run_single_experiment(config, X_train, X_test, y_train, y_test, random_state=42, deterministic=False, is_regression=False):
@@ -106,10 +108,42 @@ def run_multiple_runs(config, dataset_name, csv_path, target_column, n_runs=5, b
         except Exception:
             is_regression = False
 
-        # Запускаємо експеримент
-        metrics = run_single_experiment(
-            config, X_train, X_test, y_train, y_test, random_state, deterministic=deterministic, is_regression=is_regression
-        )
+        # Check if config is 'baseline' (special case)
+        if config == 'baseline':
+             # Use run_baseline_config logic but adapted for train/test split (run_baseline_config uses CV)
+             # Actually, run_baseline_config uses CV on X, y. Here we have X_train, X_test.
+             # We should implement a simple baseline fit/predict here.
+             from sklearn.dummy import DummyClassifier, DummyRegressor
+             
+             if is_regression:
+                 dummy = DummyRegressor(strategy='mean')
+             else:
+                 dummy = DummyClassifier(strategy='most_frequent', random_state=random_state)
+             
+             start_time = time.time()
+             dummy.fit(X_train, y_train)
+             train_time = time.time() - start_time
+             y_pred = dummy.predict(X_test)
+             y_proba = None
+             if not is_regression:
+                 try:
+                     y_proba = dummy.predict_proba(X_test)
+                 except:
+                     pass
+             
+             if is_regression:
+                 metrics = calculate_regression_metrics(y_test, y_pred)
+             else:
+                 metrics = calculate_classification_metrics(y_test, y_pred, y_proba)
+             metrics['train_time'] = train_time
+             metrics['config_name'] = 'baseline'
+             metrics['description'] = 'Dummy Baseline'
+             
+        else:
+            # Запускаємо експеримент
+            metrics = run_single_experiment(
+                config, X_train, X_test, y_train, y_test, random_state, deterministic=deterministic, is_regression=is_regression
+            )
         
         metrics['run'] = run_idx + 1
         metrics['random_state'] = random_state
@@ -212,7 +246,7 @@ def main():
     # Set deterministic mode if requested
     if args.seed is not None:
         import random
-        import numpy as np
+        # import numpy as np  <-- Removed to avoid UnboundLocalError
         random.seed(args.seed)
         np.random.seed(args.seed)
     if args.deterministic:
@@ -245,6 +279,19 @@ def main():
             if hasattr(custom_mod, 'build_full_pipeline'):
                 mgp.set_full_pipeline_callable(custom_mod.build_full_pipeline)
                 print(f"Registered external pipeline: {pipeline_file}")
+                
+                # Check for data leakage
+                try:
+                    with open(pipeline_file, 'r', encoding='utf-8') as f:
+                        source_code = f.read()
+                    if detect_data_leakage(source_code):
+                        print("\n" + "!"*70)
+                        print("WARNING: POTENTIAL DATA LEAKAGE DETECTED!")
+                        print(f"The pipeline file '{pipeline_file}' contains calls to .fit() or .fit_transform()")
+                        print("outside of the pipeline definition. This may invalidate results.")
+                        print("!"*70 + "\n")
+                except Exception as e:
+                    print(f"Warning: Could not check for data leakage: {e}")
             else:
                 print(f"Warning: pipeline file {pipeline_file} does not define build_full_pipeline().")
         except Exception as e:
@@ -288,18 +335,25 @@ def main():
     
     # Генерація конфігурацій
     configs = get_standard_configs()
-    print(f"Running {len(configs)} configurations...")
+    # Add baseline "config" (string marker)
+    configs_to_run = ['baseline'] + configs
+    
+    print(f"Running {len(configs_to_run)} configurations (including baseline)...")
     print()
     
     # Запуск експериментів
     all_results = {}
     experiment_start = time.time()
     
-    for idx, config in enumerate(configs, 1):
-        config_name = config.get_name()
-        print(f"[{idx}/{len(configs)}] Running: {config_name}")
+    for idx, config in enumerate(configs_to_run, 1):
+        if config == 'baseline':
+            config_name = 'baseline'
+        else:
+            config_name = config.get_name()
+            
+        print(f"[{idx}/{len(configs_to_run)}] Running: {config_name}")
         
-        if args.verbose:
+        if args.verbose and config != 'baseline':
             print(f"  Config: {config.to_dict()}")
         
         try:

@@ -9,7 +9,7 @@ global:
   python: null  # Override interpreter if needed, e.g. "C:/Python313/python.exe"
 
 experiments:
-  # Classification suite (5 datasets, n_runs=3)
+  # Classification suite (5 datasets, n_runs=20)
   - name: cls_breast_cancer
     description: "Gemini Flash-Lite pipeline on sklearn breast cancer dataset"
     enabled: true
@@ -55,10 +55,10 @@ experiments:
     n_runs: 20
     seed: 45
 
-  # Regression suite (5 datasets, n_runs=3)
+  # Regression suite (5 datasets, n_runs=20)
   - name: reg_california
     description: "LightGBM-style wrapper on California housing"
-    enabled: true
+    enabled: false
     dataset: california-housing-prices
     pipeline_file: model_comparison_results/gemini_live_california-housing-prices_pipeline_wrapper.py
     task_type: regression
@@ -67,36 +67,36 @@ experiments:
 
   - name: reg_diabetes
     description: "LightGBM-style wrapper on sklearn diabetes regression"
-    enabled: true
+    enabled: false
     dataset: diabetes
-    pipeline_file: model_comparison_results/gemini_live_california-housing-prices_pipeline_wrapper.py
+    pipeline_file: model_comparison_results/gemini_live_diabetes_pipeline_wrapper.py
     task_type: regression
     n_runs: 20
     seed: 52
 
   - name: reg_synth_easy
     description: "Synthetic regression benchmark (low noise)"
-    enabled: true
+    enabled: false
     dataset: synthetic_regression_easy
-    pipeline_file: model_comparison_results/gemini_live_california-housing-prices_pipeline_wrapper.py
+    pipeline_file: model_comparison_results/gemini_live_synthetic_regression_easy_pipeline_wrapper.py
     task_type: regression
     n_runs: 20
     seed: 53
 
   - name: reg_synth_medium
     description: "Synthetic regression benchmark (medium noise)"
-    enabled: true
+    enabled: false
     dataset: synthetic_regression_medium
-    pipeline_file: model_comparison_results/gemini_live_california-housing-prices_pipeline_wrapper.py
+    pipeline_file: model_comparison_results/gemini_live_synthetic_regression_medium_pipeline_wrapper.py
     task_type: regression
     n_runs: 20
     seed: 54
 
   - name: reg_synth_nonlinear
     description: "Synthetic Friedman1-style nonlinear regression"
-    enabled: true
+    enabled: false
     dataset: synthetic_regression_nonlinear
-    pipeline_file: model_comparison_results/gemini_live_california-housing-prices_pipeline_wrapper.py
+    pipeline_file: model_comparison_results/gemini_live_synthetic_regression_nonlinear_pipeline_wrapper.py
     task_type: regression
     n_runs: 20
     seed: 55

@@ -11,6 +11,10 @@ from pathlib import Path
 import google.generativeai as genai
 import sys
 
+# Add src to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from src.mle_star_ablation.prompts import PromptBuilder
+
 def load_env(env_file: Path):
     if not env_file.exists():
         return
@@ -61,52 +65,15 @@ def generate_pipeline(description: str, train_df: pd.DataFrame, test_df: pd.Data
     """Generate ML pipeline using Gemini."""
 
     # Create compact prompt for MLE-STAR style pipeline generation (reduce token footprint)
-    prompt = f"""
-You are an expert machine learning engineer. Generate a complete, production-ready Python script for the following ML task.
-
-Task Description:
-{description}
-
-Training Data Sample (first 3 rows):
-{train_df.head(3).to_string()}
-
-Training Data Shape: {train_df.shape}
-Test Data Shape: {test_df.shape}
-
-Features: {list(train_df.columns[:-1])}
-Target: {train_df.columns[-1]}
-
-Requirements:
-1. Use scikit-learn for the pipeline
-2. Include proper data preprocessing
-3. Use appropriate ML algorithm for classification
-4. Include cross-validation for evaluation
-5. Generate predictions on test set
-6. Save the pipeline and predictions
-7. Include proper error handling and logging
-8. Make the code modular and well-documented
-
-Generate a complete Python script that:
-- Loads the data from 'train.csv' and 'test.csv'
-- Preprocesses the data appropriately
-- Trains a model with cross-validation
-- Makes predictions on test data
-- Saves results to files
-
-The script should be runnable as-is.
-"""
-    # Additional hard constraints to make output easier to parse & import
-    prompt = (
-        "Please return ONLY a single Python script as raw code (no markdown, no explanations). "
-        "The script must expose a function with EXACT signature: "
-        "`def build_full_pipeline(random_state: int = 42, numeric_features: Optional[List[str]] = None, categorical_features: Optional[List[str]] = None) -> Pipeline:` "
-        "and the Pipeline must use exact top-level step names: 'preprocessor', 'feature_engineering', 'model'. "
-        "Avoid embedding large literal datasets in the code; use sklearn.datasets or load from CSV files as indicated. "
-        "For THIS dataset, ensure the pipeline CHOOSES the most appropriate model and that at least two of the following are present: 'preprocessor' (SimpleImputer + scaler), 'feature_engineering' (PCA/SelectKBest/PolynomialFeatures), 'model' and 'tuning' via GridSearchCV or RandomizedSearchCV. "
-        "If the dataset is small (<200 samples), prefer SVC or LogisticRegression with scaling and PCA so `--no_scaling` affects results. "
-        "If the model used is RandomForest or ensemble-based, include hyperparameter tuning (GridSearchCV) to ensure `--no_tuning` changes performance. "
-        + prompt
-    )
+    builder = PromptBuilder(args.dataset)
+    builder.add_role_context()
+    builder.add_task_description(description)
+    builder.add_data_sample(train_df)
+    builder.add_requirements()
+    builder.add_output_format()
+    builder.add_constraints()
+    
+    prompt = builder.build()
 
     print("🤖 Sending request to Gemini API (deterministic generation: temperature=0, top_p=1)...")
     # Force deterministic generation if supported, fallback otherwise

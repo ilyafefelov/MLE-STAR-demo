@@ -34,12 +34,93 @@ from sklearn.metrics import (
     roc_auc_score,
     make_scorer
 )
+from sklearn.dummy import DummyClassifier, DummyRegressor
+from sklearn.pipeline import Pipeline
 
 from .config import AblationConfig, get_standard_configs
 from .mle_star_generated_pipeline import build_pipeline
 
 
 # ==== 1. ЗАПУСК ОДНОГО ЕКСПЕРИМЕНТУ ========================================
+
+def run_baseline_config(
+    X: np.ndarray,
+    y: np.ndarray,
+    n_folds: int = 5,
+    random_state: int = 42,
+    task_type: str = "classification",
+    scoring: Optional[List[str]] = None,
+    deterministic: bool = False,
+) -> Dict[str, Any]:
+    """
+    Runs a baseline (Dummy) experiment.
+    """
+    if task_type == "classification":
+        cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=random_state)
+        if scoring is None:
+            scoring = ['accuracy', 'precision_macro', 'recall_macro', 'f1_macro']
+        # Use most_frequent for classification baseline
+        dummy = DummyClassifier(strategy='most_frequent', random_state=random_state)
+    else:
+        cv = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
+        if scoring is None:
+            scoring = ['neg_mean_squared_error', 'r2', 'neg_mean_absolute_error', 'neg_root_mean_squared_error']
+        # Use mean for regression baseline
+        dummy = DummyRegressor(strategy='mean')
+
+    pipeline = Pipeline([('dummy', dummy)])
+    
+    start_time = time.time()
+    try:
+        n_jobs = 1 if deterministic else -1
+        cv_results = cross_validate(
+            pipeline, 
+            X, 
+            y, 
+            cv=cv,
+            scoring=scoring,
+            return_train_score=True,
+            n_jobs=n_jobs,
+            error_score='raise'
+        )
+        elapsed_time = time.time() - start_time
+    except Exception as e:
+        return {
+            'config_name': 'baseline',
+            'error': str(e),
+            'status': 'failed',
+            'time_sec': time.time() - start_time
+        }
+
+    results = {
+        'config_name': 'baseline',
+        'status': 'success',
+        'n_folds': n_folds,
+        'time_sec': elapsed_time,
+        'time_per_fold_sec': elapsed_time / n_folds,
+        # Dummy config params
+        'use_scaling': False,
+        'use_feature_engineering': False,
+        'use_hyperparam_tuning': False,
+        'use_ensembling': False,
+        'description': 'Dummy Baseline (most_frequent/mean)'
+    }
+
+    for metric_name, scores in cv_results.items():
+        if metric_name.startswith('test_'):
+            clean_name = metric_name.replace('test_', '')
+            # Fix sklearn negative metrics
+            if clean_name.startswith('neg_'):
+                clean_name = clean_name.replace('neg_', '')
+                scores = -scores
+            
+            results[f'mean_{clean_name}'] = float(np.mean(scores))
+            results[f'std_{clean_name}'] = float(np.std(scores))
+            results[f'min_{clean_name}'] = float(np.min(scores))
+            results[f'max_{clean_name}'] = float(np.max(scores))
+            
+    return results
+
 
 def run_single_config(
     X: np.ndarray,
@@ -84,7 +165,7 @@ def run_single_config(
     else:
         cv = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
         if scoring is None:
-            scoring = ['neg_mean_squared_error', 'r2']
+            scoring = ['neg_mean_squared_error', 'r2', 'neg_mean_absolute_error', 'neg_root_mean_squared_error']
     
     # Побудова pipeline
     try:
@@ -142,6 +223,11 @@ def run_single_config(
     for metric_name, scores in cv_results.items():
         if metric_name.startswith('test_'):
             clean_name = metric_name.replace('test_', '')
+            # Fix sklearn negative metrics
+            if clean_name.startswith('neg_'):
+                clean_name = clean_name.replace('neg_', '')
+                scores = -scores
+
             results[f'mean_{clean_name}'] = float(np.mean(scores))
             results[f'std_{clean_name}'] = float(np.std(scores))
             results[f'min_{clean_name}'] = float(np.min(scores))
@@ -193,18 +279,49 @@ def run_ablation_suite(
         configs = get_standard_configs()
     
     all_results = []
-    total_experiments = len(configs) * n_repeats
+    total_experiments = (len(configs) + 1) * n_repeats # +1 for baseline
     
     if verbose:
         print(f"\n{'='*70}")
         print(f"ЗАПУСК АБЛЯЦІЙНОГО АНАЛІЗУ")
         print(f"{'='*70}")
-        print(f"Конфігурацій: {len(configs)}")
+        print(f"Конфігурацій: {len(configs)} + Baseline")
         print(f"Повторів: {n_repeats}")
         print(f"Фолдів: {n_folds}")
         print(f"Всього експериментів: {total_experiments}")
         print(f"{'='*70}\n")
     
+    # --- Run Baseline First ---
+    if verbose:
+        print(f"[0/{len(configs)}] Конфігурація: baseline")
+        print(f"  Dummy Classifier/Regressor (Control Group)")
+
+    for repeat in range(n_repeats):
+        seed = random_state + repeat
+        if verbose and n_repeats > 1:
+            print(f"  Повтор {repeat + 1}/{n_repeats} (seed={seed})...", end=" ")
+        
+        result = run_baseline_config(
+            X, y, n_folds=n_folds, random_state=seed, task_type=task_type, deterministic=deterministic
+        )
+        result['repeat'] = repeat
+        result['random_seed'] = seed
+        all_results.append(result)
+
+        if verbose and n_repeats > 1:
+            status = result.get('status', 'unknown')
+            if status == 'success':
+                main_metric = 'mean_accuracy' if task_type == 'classification' else 'mean_r2'
+                if main_metric in result:
+                    print(f"✓ {main_metric.replace('mean_', '')}: {result[main_metric]:.4f}")
+                else:
+                    print("✓")
+            else:
+                print(f"✗ {result.get('error', 'unknown error')}")
+    if verbose:
+        print()
+
+    # --- Run Configs ---
     for i, config in enumerate(configs, 1):
         if verbose:
             print(f"[{i}/{len(configs)}] Конфігурація: {config.name}")

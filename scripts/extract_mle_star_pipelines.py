@@ -33,6 +33,11 @@ from pathlib import Path
 from typing import Dict, List
 import importlib.util
 import sys
+from pathlib import Path
+
+# Add repo root to sys.path to allow importing src
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from src.mle_star_ablation import mle_star_generated_pipeline as mgp
 
 # Root to ADK MLE-STAR workspace (relative to repo root)

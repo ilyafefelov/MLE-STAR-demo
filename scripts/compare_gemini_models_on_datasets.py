@@ -25,6 +25,7 @@ from sklearn.model_selection import cross_val_score
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.mle_star_ablation.datasets import DatasetLoader
+from src.mle_star_ablation.prompts import generate_mle_prompt
 
 
 # Моделі для порівняння
@@ -45,58 +46,7 @@ def generate_pipeline_code(model_name: str, dataset_name: str, api_key: str) -> 
     
     dataset_info = DatasetLoader.get_dataset_info(dataset_name)
     
-    prompt = f"""
-Generate a complete scikit-learn ML pipeline for the '{dataset_name}' dataset.
-
-Dataset Information:
-
-Requirements:
-1. Create a Pipeline with these steps:
-   - 'preprocessor': SimpleImputer + StandardScaler
-   - 'feature_engineering': Dimensionality reduction or feature extraction
-   - 'model': Choose BEST model from: LogisticRegression, RandomForestClassifier, 
-     SVC, GradientBoostingClassifier, MLPClassifier
-
-2. Return ONLY Python function code with EXACT signature:
-    `def build_full_pipeline(random_state: int = 42, numeric_features: Optional[List[str]] = None, categorical_features: Optional[List[str]] = None) -> Pipeline:`
-
-```python
-def build_full_pipeline(random_state: int = 42, numeric_features: Optional[List[str]] = None, categorical_features: Optional[List[str]] = None) -> Pipeline:
-    from sklearn.pipeline import Pipeline
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.impute import SimpleImputer
-    # ... imports
-    
-    preprocessor = Pipeline([
-        ('imputer', SimpleImputer(strategy='mean')),
-        ('scaler', StandardScaler())
-    ])
-    
-    feature_engineering = Pipeline([
-        # your choice based on dataset
-    ])
-    
-    model = # YOUR BEST MODEL CHOICE with tuned hyperparameters
-    
-    return Pipeline([
-        ('preprocessor', preprocessor),
-        ('feature_engineering', feature_engineering),
-        ('model', model)
-    ])
-```
-
-3. Add comments explaining model choice based on:
-   - Dataset size ({dataset_info['n_samples']} samples)
-   - Features ({dataset_info['n_features']})
-   - Classes ({dataset_info['n_classes']})
-
-4. Use random_state=42
-5. Choose SOPHISTICATED model - not just LogisticRegression!
-6. Tune hyperparameters for this specific dataset
-7. ENSURE the pipeline includes at least two of the following components: 'preprocessor' (impute + scaling), 'feature_engineering' (PCA/Poly/SelectKBest), and 'tuning' (GridSearch or RandomizedSearch). This is to ensure ablation has measurable effects.
-
-Generate ONLY code, no explanations outside.
-"""
+    prompt = generate_mle_prompt(dataset_name, dataset_info)
     
     start_time = time.time()
     # Deterministic generation parameters if supported (fallback)
@@ -200,13 +150,28 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--api-key', type=str, help='Gemini API Key')
+    parser.add_argument('--datasets', nargs='*', default=None, help='List of datasets to run (default: all)')
     args = parser.parse_args()
     
     api_key = args.api_key or os.getenv('GEMINI_API_KEY')
     if not api_key:
+        # Try loading from .env
+        from pathlib import Path
+        env_path = Path('.env')
+        if env_path.exists():
+            with open(env_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    if 'GEMINI_API_KEY=' in line:
+                        api_key = line.strip().split('=', 1)[1]
+                        os.environ['GEMINI_API_KEY'] = api_key
+                        break
+    
+    if not api_key:
         print("❌ Error: GEMINI_API_KEY not set!")
         print("Usage: python compare_gemini_models_on_datasets.py --api-key YOUR_KEY")
         return
+    
+    datasets_to_run = args.datasets if args.datasets else DATASETS
     
     output_dir = Path("model_comparison_results")
     output_dir.mkdir(exist_ok=True, parents=True)
@@ -215,15 +180,15 @@ def main():
     print("COMPREHENSIVE GEMINI MODEL COMPARISON")
     print("="*80)
     print(f"Models: {', '.join(GEMINI_MODELS)}")
-    print(f"Datasets: {', '.join(DATASETS)}")
-    print(f"Total combinations: {len(GEMINI_MODELS)} × {len(DATASETS)} = {len(GEMINI_MODELS) * len(DATASETS)}")
+    print(f"Datasets: {', '.join(datasets_to_run)}")
+    print(f"Total combinations: {len(GEMINI_MODELS)} × {len(datasets_to_run)} = {len(GEMINI_MODELS) * len(datasets_to_run)}")
     print("="*80)
     
     all_results = []
-    total_experiments = len(GEMINI_MODELS) * len(DATASETS)
+    total_experiments = len(GEMINI_MODELS) * len(datasets_to_run)
     experiment_num = 0
     
-    for dataset_name in DATASETS:
+    for dataset_name in datasets_to_run:
         print(f"\n{'='*80}")
         print(f"DATASET: {dataset_name.upper()}")
         print(f"{'='*80}")
