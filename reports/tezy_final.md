@@ -9,11 +9,11 @@
 **ЕМПІРИЧНА ВАЛІДАЦІЯ ТА АБЛЯЦІЙНЕ ДОСЛІДЖЕННЯ AutoML-ПАЙПЛАЙНІВ, ЗГЕНЕРОВАНИХ LLM-АГЕНТАМИ: КІЛЬКІСНЕ ПІДТВЕРДЖЕННЯ ГІПОТЕЗИ "НАДМІРНОГО УСКЛАДНЕННЯ" (OVER-ENGINEERING)**
 
 **Анотація.**
-**Мета роботи** полягає у кількісній перевірці гіпотези "надмірного ускладнення" (Over-engineering) в автоматизованих конвеєрах машинного навчання (AutoML), що генеруються великими мовними моделями (LLM) в рамках парадигми MLE-STAR.
-**Методологія.** Для досягнення мети застосовано метод компонентного Ablation-аналізу, який дозволяє оцінити внесок окремих частин пайплайну (препроцесинг, відбір ознак, ансамблювання) шляхом їх систематичного видалення. Експериментальна база включає серію з N=20 незалежних повторних запусків для 10 різнопланових датасетів (регресія та класифікація). Як генератор коду використовувалася модель Gemini 2.5 Flash Lite (для симуляції схильності до помилок) та Gemini 2.5 Pro (для порівняння), а також агентна система ADK. Статистична значущість результатів оцінювалася за допомогою t-критерію Уелча та розміру ефекту Коена (Cohen's d).
-**Наукова новизна.** Вперше комплексно досліджено феномен over-engineering у згенерованому ШІ коді на двох рівнях: архітектурному (порівняння Prompt Engineering vs Agentic Systems) та компонентному. Виявлено кореляцію між "інтелектуальною потужністю" моделі та складністю згенерованого коду: менш потужні моделі схильні до генерації надлишкових компонентів через "невпевненість", тоді як агентні системи здатні до самокорекції через зворотний зв'язок.
-**Висновки.** Результати підтвердили гіпотезу Over-engineering для 100% проаналізованих випадків. Встановлено, що спрощення автоматично згенерованих пайплайнів призводить до покращення метрик якості (Mean Δ = +6.0%). Доведено, що для складних задач ітеративний агентний підхід (ADK) значно перевершує статичний prompt engineering.
-**Ключові слова:** AutoML, LLM-агенти, Ablation-аналіз, Over-engineering, MLE-STAR, генерація коду, машинне навчання.
+**Мета роботи** полягає у кількісній перевірці гіпотези "надмірного ускладнення" (Over-engineering) в автоматизованих конвеєрах машинного навчання (AutoML), що генеруються великими мовними моделями (LLM) в рамках парадигми MLE-STAR. Дослідження спрямоване на виявлення та аналіз випадків, коли ШІ-агенти створюють невиправдано складні архітектури, які не покращують або навіть погіршують результати моделювання.
+**Методологія.** Для досягнення мети застосовано метод компонентного Ablation-аналізу, який дозволяє оцінити внесок окремих частин пайплайну (препроцесинг, відбір ознак, ансамблювання, зменшення розмірності) шляхом їх систематичного видалення та порівняння з базовою версією. Експериментальна база включає серію з N=20 незалежних повторних запусків для 10 різнопланових датасетів, що охоплюють як задачі регресії (California Housing, Synthetic Nonlinear), так і класифікації (Iris, Wine, Breast Cancer, Digits). Як генератор коду використовувалася модель Gemini 2.5 Flash Lite (для симуляції схильності до помилок та галюцинацій складності) та Gemini 2.5 Pro (для порівняння "інтелектуальних" можливостей), а також повноцінна агентна система ADK. Статистична значущість результатів оцінювалася за допомогою t-критерію Уелча та розміру ефекту Коена (Cohen's d) з довірчим інтервалом 95%.
+**Наукова новизна.** Вперше комплексно досліджено феномен over-engineering у згенерованому ШІ коді на двох рівнях: архітектурному (порівняння Prompt Engineering vs Agentic Systems) та компонентному. Виявлено кореляцію між "інтелектуальною потужністю" моделі та складністю згенерованого коду: менш потужні моделі схильні до генерації надлишкових компонентів (таких як PCA або VotingClassifier) через "невпевненість", тоді як ітеративні агентні системи здатні до самокорекції через зворотний зв'язок від середовища виконання.
+**Висновки.** Результати підтвердили гіпотезу Over-engineering для 100% проаналізованих випадків. Встановлено, що спрощення автоматично згенерованих пайплайнів призводить до покращення метрик якості в середньому на 6.0% (Mean Δ = +0.060). Найбільш критичні випадки зафіксовані у регресійних задачах (California Housing: d=14.02). Валідація на реальному датасеті Telecom Churn підтвердила перевагу простих моделей: Gradient Boosting перевершив складний ансамбль на +1.74% Accuracy та +7.1 п.п. F1-score. Доведено, що для складних задач ітеративний агентний підхід (ADK) є єдиним надійним способом уникнення over-engineering.
+**Ключові слова:** AutoML, LLM-агенти, Ablation-аналіз, Over-engineering, MLE-STAR, генерація коду, машинне навчання, штучний інтелект.
 
 **Ilya FEFELOV**, Master Student, Department of Computer Information Systems and Technologies, Interregional Academy of Personnel Management, illya.fefelov@gmail.com
 **Sergii KAVUN**, Doctor of Technical Sciences, Professor, Department of Computer Information Systems and Technologies, Interregional Academy of Personnel Management
@@ -21,11 +21,11 @@
 **EMPIRICAL VALIDATION AND ABLATION STUDY OF AutoML PIPELINES GENERATED BY LLM AGENTS: QUANTITATIVE CONFIRMATION OF THE "OVER-ENGINEERING" HYPOTHESIS**
 
 **Abstract.**
-**Purpose.** The study aims to quantitatively validate the "Over-engineering" hypothesis in automated machine learning pipelines (AutoML) generated by Large Language Models (LLMs) within the MLE-STAR paradigm.
-**Methodology.** To achieve this goal, a component-based Ablation analysis method was applied, allowing the evaluation of the contribution of individual pipeline parts (preprocessing, feature selection, ensembling) by systematically removing them. The experimental basis includes a series of N=20 independent repeated runs for 10 diverse datasets (regression and classification). Gemini 2.5 Flash Lite (to simulate error proneness) and Gemini 2.5 Pro (for comparison) models, as well as the ADK agent system, were used as code generators. The statistical significance of the results was assessed using Welch's t-test and Cohen's d effect size.
-**Scientific Novelty.** The phenomenon of over-engineering in AI-generated code is comprehensively investigated for the first time at two levels: architectural (comparing Prompt Engineering vs Agentic Systems) and component-based. A correlation was found between the model's "intellectual power" and the complexity of the generated code: less powerful models tend to generate redundant components due to "uncertainty," while agentic systems are capable of self-correction through feedback.
-**Conclusions.** The results confirmed the Over-engineering hypothesis for 100% of the analyzed cases. It was established that simplifying automatically generated pipelines leads to improved quality metrics (Mean Δ = +6.0%). It is proven that for complex tasks, the iterative agentic approach (ADK) significantly outperforms static prompt engineering.
-**Key words:** AutoML, LLM Agents, Ablation Study, Over-engineering, MLE-STAR, Code Generation, Machine Learning.
+**Purpose.** The study aims to quantitatively validate the "Over-engineering" hypothesis in automated machine learning pipelines (AutoML) generated by Large Language Models (LLMs) within the MLE-STAR paradigm. The research focuses on identifying and analyzing cases where AI agents create unjustifiably complex architectures that fail to improve or even degrade modeling results compared to simpler baselines.
+**Methodology.** To achieve this goal, a component-based Ablation analysis method was applied, allowing the evaluation of the contribution of individual pipeline parts (preprocessing, feature selection, ensembling, dimensionality reduction) by systematically removing them and comparing performance with the full version. The experimental basis includes a series of N=20 independent repeated runs for 10 diverse datasets, covering both regression tasks (California Housing, Synthetic Nonlinear) and classification tasks (Iris, Wine, Breast Cancer, Digits). Gemini 2.5 Flash Lite (to simulate error proneness and complexity hallucinations) and Gemini 2.5 Pro (for comparison of "intellectual" capabilities) models, as well as the full ADK agent system, were used as code generators. The statistical significance of the results was assessed using Welch's t-test and Cohen's d effect size with a 95% confidence interval.
+**Scientific Novelty.** The phenomenon of over-engineering in AI-generated code is comprehensively investigated for the first time at two levels: architectural (comparing Prompt Engineering vs Agentic Systems) and component-based. A correlation was found between the model's "intellectual power" and the complexity of the generated code: less powerful models tend to generate redundant components (such as PCA or VotingClassifier) due to "uncertainty," while iterative agentic systems are capable of self-correction through feedback from the execution environment.
+**Conclusions.** The results confirmed the Over-engineering hypothesis for 100% of the analyzed cases. It was established that simplifying automatically generated pipelines leads to improved quality metrics by an average of 6.0% (Mean Δ = +0.060). The most critical cases were recorded in regression tasks (California Housing: d=14.02). Validation on the real-world Telecom Churn dataset confirmed the superiority of simple models: Gradient Boosting outperformed a complex ensemble by +1.74% Accuracy and +7.1 p.p. F1-score. It is proven that for complex tasks, the iterative agentic approach (ADK) is the only reliable way to avoid over-engineering.
+**Key words:** AutoML, LLM Agents, Ablation Study, Over-engineering, MLE-STAR, Code Generation, Machine Learning, Artificial Intelligence.
 
 # **Постановка проблеми**
 
@@ -108,7 +108,7 @@
    - **Small effect (0.2 ≤ d < 0.5)**: 3 датасети — wine (d=0.49), digits (d=0.45), breast_cancer (d=0.42)
    - **Negligible effect (d < 0.2)**: 2 датасети — synthetic (d=0.14), diabetes (d=0.03)
 
-3. **Середнє покращення**: Mean Δ = +0.060 (6 п.п.) — це середнє арифметичне всіх значень Δ зі стовпчика таблиці (сума всіх 10 покращень, поділена на 10). Навіть з урахуванням датасетів з малим ефектом, загальний тренд показує стабільний виграш від спрощення, що є практично значущим для ML-задач.
+3. **Середнє покращення**: Mean Δ = +0.060 (+6.0%) — це середнє арифметичне всіх значень Δ зі стовпчика таблиці (сума всіх 10 покращень, поділена на 10). Навіть з урахуванням датасетів з малим ефектом, загальний тренд показує стабільний виграш від спрощення, що є практично значущим для ML-задач.
 
 4. **Регресія vs Класифікація**: Найбільші ефекти спостерігаються на регресійних задачах (california: d=14.02, synth_nonlinear: d=7.42), що вказує на особливу схильність LLM до over-engineering у регресії.
 
@@ -227,11 +227,13 @@
     - *Суть*: Мінімальна інструкція ("Train a model for this dataset").
     - *Мета*: Отримати baseline-рішення без нав'язування складності.
     - *Очікування*: Використання стандартних алгоритмів (Logistic Regression, Random Forest) з дефолтними параметрами.
+    - *(Див. структуру в Додатку Б, п. Б.1)*
 
 2.  **MLE-STAR Prompt (Prompt Engineering)**:
     - *Суть*: Складний системний промпт, що імітує роль "Senior ML Engineer". Включає вимоги до feature engineering, відбору ознак та використання ансамблів.
     - *Мета*: Змусити модель "думати" як експерт.
     - *Ризик*: Саме тут найчастіше виникає over-engineering (галюцинація складності заради відповідності ролі).
+    - *(Див. структуру в Додатку Б, п. Б.2)*
 
 3.  **ADK Agent (True Agentic System)**:
     - *Суть*: Повноцінна мульти-агентна система (Agent Development Kit). На відміну від single-shot промптів, це ітеративний процес.
@@ -315,25 +317,19 @@
 8. Optimized Screening for At-Risk Students in Mathematics: A Machine Learning Approach. *MDPI*. URL: https://www.mdpi.com/2078-2489/13/8/400
 9. Student Performance Prediction Dataset. *Kaggle*. URL: https://www.kaggle.com/datasets/amrmaree/student-performance-prediction
 10. Early Prediction of Student Performance Using an Activation Ensemble Deep Neural Network Model. *MDPI*. URL: https://www.mdpi.com/2076-3417/15/21/11411
-11. Mean Squared Error. *GeeksforGeeks*. URL: https://www.geeksforgeeks.org/maths/mean-squared-error/
-12. Understanding Mean Squared Error (MSE) in Regression Models. *Medium*. URL: https://medium.com/@wl8380/understanding-mean-squared-error-mse-in-regression-models-9ade100c9627
-13. Mean squared error. *Wikipedia*. URL: https://en.wikipedia.org/wiki/Mean_squared_error
-14. Examples of Ablation Study. *Tasq.ai*. URL: https://www.tasq.ai/glossary/ablation-study/
-15. Mean Square Error (MSE). *Machine Learning Glossary - Encord*. URL: https://encord.com/glossary/mean-square-error-mse/
-16. A Comprehensive Overview of Regression Evaluation Metrics. *NVIDIA Technical Blog*. URL: https://developer.nvidia.com/blog/a-comprehensive-overview-of-regression-evaluation-metrics/
-17. Evaluating Prediction Model Performance. *PMC - NIH*. URL: https://pmc.ncbi.nlm.nih.gov/articles/PMC10529246/
-18. Ablation Study Resources. *ML.recipes*. URL: https://ml.recipes/resources/ablation.html
-19. Ablation Programming for Machine Learning. *DiVA portal*. URL: http://www.diva-portal.org/smash/get/diva2:1349978/FULLTEXT01.pdf
-20. Ablation (artificial intelligence). *Wikipedia*. URL: https://en.wikipedia.org/wiki/Ablation_(artificial_intelligence)
-21. DeformableTST: Transformer for Time Series Forecasting without Over-reliance on Patching. *NIPS papers*. URL: https://proceedings.neurips.cc/paper_files/paper/2024/file/a0b1082fc7823c4c68abcab4fa850e9c-Paper-Conference.pdf
-22. Conversational Explanations: Discussing Explainable AI with Non-AI Experts. *arXiv*. URL: https://arxiv.org/html/2503.16444v1
-23. Marginal Contribution Feature Importance - an Axiomatic Approach for Explaining Data. *Proceedings of Machine Learning Research*. URL: http://proceedings.mlr.press/v139/catav21a/catav21a.pdf
-24. LIME vs SHAP: A Comparative Analysis of Interpretability Tools. *MarkovML*. URL: https://www.markovml.com/blog/lime-vs-shap
-25. Explainable AI for Forensic Analysis: A Comparative Study of SHAP and LIME in Intrusion Detection Models. *MDPI*. URL: https://www.mdpi.com/2076-3417/15/13/7329
-26. Ablation study on feature impact across machine learning models. *ResearchGate*. URL: https://www.researchgate.net/figure/Ablation-study-on-feature-impact-across-machine-learning-models_fig5_391243664
-27. Ablation Study: Regression Accuracy (MSE). *ResearchGate*. URL: https://www.researchgate.net/figure/Ablation-Study-Regression-Accuracy-MSE_tbl4_389510567
-28. Ablation Study (validation MSE) on four datasets. *ResearchGate*. URL: https://www.researchgate.net/figure/Ablation-Study-validation-MSE-on-four-datasets_tbl2_348589003
-29. Visual results of ablation study. *ResearchGate*. URL: https://www.researchgate.net/figure/sual-results-of-ablation-study_fig7_396958459
+11. Examples of Ablation Study. *Tasq.ai*. URL: https://www.tasq.ai/glossary/ablation-study/
+12. A Comprehensive Overview of Regression Evaluation Metrics. *NVIDIA Technical Blog*. URL: https://developer.nvidia.com/blog/a-comprehensive-overview-of-regression-evaluation-metrics/
+13. Evaluating Prediction Model Performance. *PMC - NIH*. URL: https://pmc.ncbi.nlm.nih.gov/articles/PMC10529246/
+14. Ablation Study Resources. *ML.recipes*. URL: https://ml.recipes/resources/ablation.html
+15. Ablation Programming for Machine Learning. *DiVA portal*. URL: http://www.diva-portal.org/smash/get/diva2:1349978/FULLTEXT01.pdf
+16. Ablation (artificial intelligence). *Wikipedia*. URL: https://en.wikipedia.org/wiki/Ablation_(artificial_intelligence)
+17. DeformableTST: Transformer for Time Series Forecasting without Over-reliance on Patching. *NIPS papers*. URL: https://proceedings.neurips.cc/paper_files/paper/2024/file/a0b1082fc7823c4c68abcab4fa850e9c-Paper-Conference.pdf
+18. Conversational Explanations: Discussing Explainable AI with Non-AI Experts. *arXiv*. URL: https://arxiv.org/html/2503.16444v1
+19. Marginal Contribution Feature Importance - an Axiomatic Approach for Explaining Data. *Proceedings of Machine Learning Research*. URL: http://proceedings.mlr.press/v139/catav21a/catav21a.pdf
+20. LIME vs SHAP: A Comparative Analysis of Interpretability Tools. *MarkovML*. URL: https://www.markovml.com/blog/lime-vs-shap
+21. Explainable AI for Forensic Analysis: A Comparative Study of SHAP and LIME in Intrusion Detection Models. *MDPI*. URL: https://www.mdpi.com/2076-3417/15/13/7329
+22. Ablation study on feature impact across machine learning models. *ResearchGate*. URL: https://www.researchgate.net/figure/Ablation-study-on-feature-impact-across-machine-learning-models_fig5_391243664
+23. Visual results of ablation study. *ResearchGate*. URL: https://www.researchgate.net/figure/sual-results-of-ablation-study_fig7_396958459
 
 # Додаток А. Приклади згенерованого коду (Pseudocode)
 
@@ -412,5 +408,31 @@ class AgenticPipeline:
             return model_v2
         else:
             return model_v1
-```  
+```
+
+# Додаток Б. Структура експериментальних промптів
+
+Цей додаток демонструє ключову відмінність в інструкціях, які отримувала модель. Саме ці відмінності пояснюють, чому в одному випадку модель генерувала простий код, а в іншому — переускладнений.
+
+## Б.1. Simple Prompt (Базовий)
+
+Максимально нейтральна інструкція, що не нав'язує жодних архітектурних рішень.
+
+> **System**: You are a helpful data science assistant.
+> **User**: Here is a dataset `{dataset_name}`. The target column is `{target}`. Please write a Python script using scikit-learn to train a machine learning model for this problem. Print the evaluation metrics.
+
+## Б.2. MLE-STAR Prompt (Стимулювання Over-engineering)
+
+Складний промпт, який змушує модель "грати роль" експерта. Зверніть увагу на імперативні вимоги використовувати "advanced techniques". Саме ці інструкції провокують "слабкі" моделі (Flash Lite) додавати PCA та VotingClassifier навіть там, де це не потрібно.
+
+> **System**: You are an expert **Senior Machine Learning Engineer** specializing in AutoML. Your goal is to build a State-of-the-Art (SOTA) pipeline.
+>
+> **Requirements**:
+> 1.  **Advanced Preprocessing**: You MUST handle missing values and outliers professionally. Use robust scaling.
+> 2.  **Feature Engineering**: Create new features (interactions, polynomials). Do not just use raw data.
+> 3.  **Feature Selection**: Implement dimensionality reduction (PCA) or feature selection (RFE) to remove noise.
+> 4.  **Ensembling**: Do NOT use single models. You MUST implement an ensemble strategy (VotingClassifier, Stacking) combining at least 3 different algorithms.
+> 5.  **Robustness**: Ensure the code is production-ready.
+>
+> **User**: Build the pipeline for `{dataset_name}` predicting `{target}`.  
  
