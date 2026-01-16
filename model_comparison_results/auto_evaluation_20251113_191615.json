@@ -1,0 +1,14 @@
+[
+  {
+    "task": "california-housing-prices",
+    "run_id": "1",
+    "artifact_type": "initialization",
+    "source": "adk-samples\\python\\agents\\machine-learning-engineering\\machine_learning_engineering\\workspace\\california-housing-prices\\1\\init_code_1.py",
+    "metric_name": "generic",
+    "metric_value": 206171.291667,
+    "repeat_index": 0,
+    "raw_line": "[LightGBM] [Info] Start training from score 206171.291667",
+    "stdout_snippet": "    params = func_sig.bind(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Program Files\\Python312\\Lib\\inspect.py\", line 3273, in bind\n    return self._bind(args, kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Program Files\\Python312\\Lib\\inspect.py\", line 3262, in _bind\n    raise TypeError(\nTypeError: got an unexpected keyword argument 'squared'",
+    "task_type": "regression"
+  }
+]

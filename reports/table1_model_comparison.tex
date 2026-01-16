@@ -1,0 +1,30 @@
+\begin{longtable}{llrrrrl}
+\caption{Model comparison: mean accuracy per dataset and Gemini variant} \label{tab:gemini_model_comparison} \\
+\toprule
+dataset & variant & accuracy_mean & accuracy_std & generation_time & code_length & model_used \\
+\midrule
+\endfirsthead
+\caption[]{Model comparison: mean accuracy per dataset and Gemini variant} \\
+\toprule
+dataset & variant & accuracy_mean & accuracy_std & generation_time & code_length & model_used \\
+\midrule
+\endhead
+\midrule
+\multicolumn{7}{r}{Continued on next page} \\
+\midrule
+\endfoot
+\bottomrule
+\endlastfoot
+breast_cancer & gemini-2.5-flash & 0.950800 & 0.015300 & 37.712486 & 4112.000000 & GradientBoostingClassifier \\
+breast_cancer & gemini-2.5-flash-lite & 0.949000 & 0.018000 & 4.766211 & 5065.000000 & RandomForestClassifier \\
+breast_cancer & gemini-2.5-pro & 0.947200 & 0.023700 & 23.553447 & 3214.000000 & SVC \\
+digits & gemini-2.5-flash & 0.920400 & 0.028800 & 15.648894 & 3800.000000 & MLPClassifier \\
+digits & gemini-2.5-flash-lite & 0.944900 & 0.013300 & 4.792000 & 4949.000000 & SVC \\
+digits & gemini-2.5-pro & 0.949400 & 0.006000 & 27.122847 & 3094.000000 & SVC \\
+iris & gemini-2.5-flash & 0.900000 & 0.073000 & 19.860706 & 2523.000000 & GradientBoostingClassifier \\
+iris & gemini-2.5-flash-lite & 0.913300 & 0.045200 & 3.347908 & 4035.000000 & GridSearchCV \\
+iris & gemini-2.5-pro & 0.920000 & 0.040000 & 23.681037 & 2824.000000 & SVC \\
+wine & gemini-2.5-flash & 0.966700 & 0.032400 & 14.693094 & 3570.000000 & SVC \\
+wine & gemini-2.5-flash-lite & 0.961000 & 0.022100 & 3.370329 & 3244.000000 & GridSearchCV \\
+wine & gemini-2.5-pro & 0.971900 & 0.017600 & 33.892385 & 3322.000000 & SVC \\
+\end{longtable}

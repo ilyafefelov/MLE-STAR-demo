@@ -1,0 +1,102 @@
+# Experiment suite manifest for upcoming ablation runs
+# Enable or disable entries before executing scripts/run_experiment_suite.py
+
+global:
+  output_dir: results
+  n_runs: 20
+  deterministic: true
+  base_seed: 42
+  python: null  # Override interpreter if needed, e.g. "C:/Python313/python.exe"
+
+experiments:
+  # Classification suite (5 datasets, n_runs=20)
+  - name: cls_breast_cancer
+    description: "Gemini Flash-Lite pipeline on sklearn breast cancer dataset"
+    enabled: true
+    dataset: breast_cancer
+    pipeline_file: model_comparison_results/gemini_2.5_flash_lite_breast_cancer_pipeline_wrapper.py
+    task_type: classification
+    n_runs: 20
+    seed: 41
+
+  - name: cls_wine
+    description: "Gemini Flash-Lite pipeline on sklearn wine dataset"
+    enabled: true
+    dataset: wine
+    pipeline_file: model_comparison_results/gemini_2.5_flash_lite_wine_pipeline_wrapper.py
+    task_type: classification
+    n_runs: 20
+    seed: 42
+
+  - name: cls_digits
+    description: "Gemini Flash-Lite pipeline on sklearn digits dataset"
+    enabled: true
+    dataset: digits
+    pipeline_file: model_comparison_results/gemini_2.5_flash_lite_digits_pipeline_wrapper.py
+    task_type: classification
+    n_runs: 20
+    seed: 43
+
+  - name: cls_iris
+    description: "Gemini Flash-Lite pipeline on sklearn iris dataset"
+    enabled: true
+    dataset: iris
+    pipeline_file: model_comparison_results/gemini_2.5_flash_lite_iris_pipeline_wrapper.py
+    task_type: classification
+    n_runs: 20
+    seed: 44
+
+  - name: cls_synthetic_balanced
+    description: "Synthetic balanced classification benchmark"
+    enabled: true
+    dataset: synthetic_classification
+    pipeline_file: model_comparison_results/gemini_2.5_flash_lite_digits_pipeline_wrapper.py
+    task_type: classification
+    n_runs: 20
+    seed: 45
+
+  # Regression suite (5 datasets, n_runs=20)
+  - name: reg_california
+    description: "LightGBM-style wrapper on California housing"
+    enabled: true
+    dataset: california-housing-prices
+    pipeline_file: model_comparison_results/gemini_live_california-housing-prices_pipeline_wrapper.py
+    task_type: regression
+    n_runs: 20
+    seed: 51
+
+  - name: reg_diabetes
+    description: "LightGBM-style wrapper on sklearn diabetes regression"
+    enabled: true
+    dataset: diabetes
+    pipeline_file: model_comparison_results/gemini_live_diabetes_pipeline_wrapper.py
+    task_type: regression
+    n_runs: 20
+    seed: 52
+
+  - name: reg_synth_easy
+    description: "Synthetic regression benchmark (low noise)"
+    enabled: true
+    dataset: synthetic_regression_easy
+    pipeline_file: model_comparison_results/gemini_live_synthetic_regression_easy_pipeline_wrapper.py
+    task_type: regression
+    n_runs: 20
+    seed: 53
+
+  - name: reg_synth_medium
+    description: "Synthetic regression benchmark (medium noise)"
+    enabled: true
+    dataset: synthetic_regression_medium
+    pipeline_file: model_comparison_results/gemini_live_synthetic_regression_medium_pipeline_wrapper.py
+    task_type: regression
+    n_runs: 20
+    seed: 54
+
+  - name: reg_synth_nonlinear
+    description: "Synthetic Friedman1-style nonlinear regression"
+    enabled: true
+    dataset: synthetic_regression_nonlinear
+    pipeline_file: model_comparison_results/gemini_live_synthetic_regression_nonlinear_pipeline_wrapper.py
+    task_type: regression
+    n_runs: 20
+    seed: 55

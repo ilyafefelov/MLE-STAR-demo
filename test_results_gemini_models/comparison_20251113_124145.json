@@ -1,0 +1,83 @@
+[
+  {
+    "model": "gemini-2.5-flash-lite",
+    "generation_time": 3.728944778442383,
+    "code_length": 4226,
+    "estimated_tokens": 691,
+    "timestamp": "2025-11-13T12:40:28.419498",
+    "lines_of_code": 82,
+    "has_comments": true,
+    "has_docstring": true,
+    "has_imports": true,
+    "has_pipeline": true,
+    "has_preprocessor": true,
+    "has_feature_engineering": true,
+    "has_model": true,
+    "has_random_state": true,
+    "comment_lines": 42,
+    "comment_ratio": 0.5121951219512195,
+    "accuracy_mean": 0.9599728629579376,
+    "accuracy_std": 0.007201123169647521,
+    "train_time": 0.030604839324951172,
+    "success": true,
+    "pipeline_steps": [
+      "preprocessor",
+      "feature_engineering",
+      "model"
+    ]
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "generation_time": 17.195438623428345,
+    "code_length": 4849,
+    "estimated_tokens": 787,
+    "timestamp": "2025-11-13T12:40:55.790918",
+    "lines_of_code": 84,
+    "has_comments": true,
+    "has_docstring": true,
+    "has_imports": true,
+    "has_pipeline": true,
+    "has_preprocessor": true,
+    "has_feature_engineering": true,
+    "has_model": true,
+    "has_random_state": true,
+    "comment_lines": 54,
+    "comment_ratio": 0.6428571428571429,
+    "accuracy_mean": 0.959897482285542,
+    "accuracy_std": 0.014498194217001414,
+    "train_time": 0.016705751419067383,
+    "success": true,
+    "pipeline_steps": [
+      "preprocessor",
+      "feature_engineering",
+      "model"
+    ]
+  },
+  {
+    "model": "gemini-2.5-pro",
+    "generation_time": 39.297792196273804,
+    "code_length": 5010,
+    "estimated_tokens": 840,
+    "timestamp": "2025-11-13T12:41:45.142519",
+    "lines_of_code": 100,
+    "has_comments": true,
+    "has_docstring": true,
+    "has_imports": true,
+    "has_pipeline": true,
+    "has_preprocessor": true,
+    "has_feature_engineering": true,
+    "has_model": true,
+    "has_random_state": true,
+    "comment_lines": 53,
+    "comment_ratio": 0.53,
+    "accuracy_mean": 0.959897482285542,
+    "accuracy_std": 0.014498194217001414,
+    "train_time": 0.0641171932220459,
+    "success": true,
+    "pipeline_steps": [
+      "preprocessor",
+      "feature_engineering",
+      "model"
+    ]
+  }
+]

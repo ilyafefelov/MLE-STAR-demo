@@ -1,0 +1,296 @@
+[
+  {
+    "model": "gemini-2.5-flash-lite",
+    "dataset": "breast_cancer",
+    "generation_time": 4.766211271286011,
+    "code_length": 5065,
+    "timestamp": "2025-11-13T12:52:35.171523",
+    "accuracy_mean": 0.9490141282409563,
+    "accuracy_std": 0.01795643924595057,
+    "accuracy_min": 0.9210526315789473,
+    "accuracy_max": 0.9736842105263158,
+    "model_used": "RandomForestClassifier",
+    "pipeline_steps": [
+      "preprocessor",
+      "feature_engineering",
+      "model"
+    ],
+    "success": true,
+    "detected_models": [
+      "Logistic Regression",
+      "Random Forest",
+      "Gradient Boosting",
+      "Support Vector Machine",
+      "Neural Network (MLP)"
+    ],
+    "complexity": "complex"
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "dataset": "breast_cancer",
+    "generation_time": 37.712485790252686,
+    "code_length": 4112,
+    "timestamp": "2025-11-13T12:53:19.689151",
+    "accuracy_mean": 0.9507995652848937,
+    "accuracy_std": 0.015268434734252687,
+    "accuracy_min": 0.9210526315789473,
+    "accuracy_max": 0.9649122807017544,
+    "model_used": "GradientBoostingClassifier",
+    "pipeline_steps": [
+      "preprocessor",
+      "feature_engineering",
+      "model"
+    ],
+    "success": true,
+    "detected_models": [
+      "Logistic Regression",
+      "Random Forest",
+      "Gradient Boosting",
+      "Support Vector Machine",
+      "Neural Network (MLP)"
+    ],
+    "complexity": "complex"
+  },
+  {
+    "model": "gemini-2.5-pro",
+    "dataset": "breast_cancer",
+    "generation_time": 23.553446769714355,
+    "code_length": 3214,
+    "timestamp": "2025-11-13T12:53:50.260006",
+    "accuracy_mean": 0.947228691197019,
+    "accuracy_std": 0.02369491340258042,
+    "accuracy_min": 0.9203539823008849,
+    "accuracy_max": 0.9824561403508771,
+    "model_used": "SVC",
+    "pipeline_steps": [
+      "preprocessor",
+      "feature_engineering",
+      "model"
+    ],
+    "success": true,
+    "detected_models": [
+      "Support Vector Machine"
+    ],
+    "complexity": "simple"
+  },
+  {
+    "model": "gemini-2.5-flash-lite",
+    "dataset": "wine",
+    "generation_time": 3.3703291416168213,
+    "code_length": 3244,
+    "timestamp": "2025-11-13T12:54:28.776809",
+    "accuracy_mean": 0.9609523809523809,
+    "accuracy_std": 0.02214499050996228,
+    "accuracy_min": 0.9444444444444444,
+    "accuracy_max": 1.0,
+    "model_used": "GridSearchCV",
+    "pipeline_steps": [
+      "preprocessor",
+      "feature_engineering",
+      "model"
+    ],
+    "success": true,
+    "detected_models": [
+      "Logistic Regression",
+      "Random Forest",
+      "Gradient Boosting",
+      "Support Vector Machine",
+      "Neural Network (MLP)"
+    ],
+    "complexity": "complex"
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "dataset": "wine",
+    "generation_time": 14.693093538284302,
+    "code_length": 3570,
+    "timestamp": "2025-11-13T12:54:54.064158",
+    "accuracy_mean": 0.9666666666666666,
+    "accuracy_std": 0.03239417719358502,
+    "accuracy_min": 0.9166666666666666,
+    "accuracy_max": 1.0,
+    "model_used": "SVC",
+    "pipeline_steps": [
+      "preprocessor",
+      "feature_engineering",
+      "model"
+    ],
+    "success": true,
+    "detected_models": [
+      "Logistic Regression",
+      "Random Forest",
+      "Gradient Boosting",
+      "Support Vector Machine",
+      "Neural Network (MLP)"
+    ],
+    "complexity": "complex"
+  },
+  {
+    "model": "gemini-2.5-pro",
+    "dataset": "wine",
+    "generation_time": 33.89238476753235,
+    "code_length": 3322,
+    "timestamp": "2025-11-13T12:55:32.995885",
+    "accuracy_mean": 0.9719047619047618,
+    "accuracy_std": 0.017572511115045146,
+    "accuracy_min": 0.9444444444444444,
+    "accuracy_max": 1.0,
+    "model_used": "SVC",
+    "pipeline_steps": [
+      "preprocessor",
+      "feature_engineering",
+      "model"
+    ],
+    "success": true,
+    "detected_models": [
+      "Gradient Boosting",
+      "Support Vector Machine",
+      "Neural Network (MLP)"
+    ],
+    "complexity": "complex"
+  },
+  {
+    "model": "gemini-2.5-flash-lite",
+    "dataset": "digits",
+    "generation_time": 4.791999578475952,
+    "code_length": 4949,
+    "timestamp": "2025-11-13T12:56:12.854414",
+    "accuracy_mean": 0.9449040544722995,
+    "accuracy_std": 0.013343446855466276,
+    "accuracy_min": 0.9331476323119777,
+    "accuracy_max": 0.9638888888888889,
+    "model_used": "SVC",
+    "pipeline_steps": [
+      "preprocessor",
+      "feature_engineering",
+      "model"
+    ],
+    "success": true,
+    "detected_models": [
+      "Logistic Regression",
+      "Random Forest",
+      "Gradient Boosting",
+      "Support Vector Machine",
+      "Neural Network (MLP)"
+    ],
+    "complexity": "complex"
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "dataset": "digits",
+    "generation_time": 15.648894309997559,
+    "code_length": 3800,
+    "timestamp": "2025-11-13T12:56:33.769640",
+    "accuracy_mean": 0.9204271123491179,
+    "accuracy_std": 0.028787503528729868,
+    "accuracy_min": 0.8774373259052924,
+    "accuracy_max": 0.947075208913649,
+    "model_used": "MLPClassifier",
+    "pipeline_steps": [
+      "preprocessor",
+      "feature_engineering",
+      "model"
+    ],
+    "success": true,
+    "detected_models": [
+      "Neural Network (MLP)"
+    ],
+    "complexity": "complex"
+  },
+  {
+    "model": "gemini-2.5-pro",
+    "dataset": "digits",
+    "generation_time": 27.122846603393555,
+    "code_length": 3094,
+    "timestamp": "2025-11-13T12:57:09.771375",
+    "accuracy_mean": 0.9493577839678118,
+    "accuracy_std": 0.005957304812588377,
+    "accuracy_min": 0.9415041782729805,
+    "accuracy_max": 0.9583333333333334,
+    "model_used": "SVC",
+    "pipeline_steps": [
+      "preprocessor",
+      "feature_engineering",
+      "model"
+    ],
+    "success": true,
+    "detected_models": [
+      "Support Vector Machine"
+    ],
+    "complexity": "simple"
+  },
+  {
+    "model": "gemini-2.5-flash-lite",
+    "dataset": "iris",
+    "generation_time": 3.347907543182373,
+    "code_length": 4035,
+    "timestamp": "2025-11-13T12:57:49.618040",
+    "accuracy_mean": 0.9133333333333333,
+    "accuracy_std": 0.04521553322083511,
+    "accuracy_min": 0.8666666666666667,
+    "accuracy_max": 0.9666666666666667,
+    "model_used": "GridSearchCV",
+    "pipeline_steps": [
+      "preprocessor",
+      "feature_engineering",
+      "model"
+    ],
+    "success": true,
+    "detected_models": [
+      "Logistic Regression",
+      "Random Forest",
+      "Gradient Boosting",
+      "Support Vector Machine",
+      "Neural Network (MLP)"
+    ],
+    "complexity": "complex"
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "dataset": "iris",
+    "generation_time": 19.860705852508545,
+    "code_length": 2523,
+    "timestamp": "2025-11-13T12:58:15.054606",
+    "accuracy_mean": 0.9,
+    "accuracy_std": 0.07302967433402213,
+    "accuracy_min": 0.8,
+    "accuracy_max": 1.0,
+    "model_used": "GradientBoostingClassifier",
+    "pipeline_steps": [
+      "preprocessor",
+      "feature_engineering",
+      "model"
+    ],
+    "success": true,
+    "detected_models": [
+      "Logistic Regression",
+      "Random Forest",
+      "Gradient Boosting",
+      "Support Vector Machine",
+      "Neural Network (MLP)"
+    ],
+    "complexity": "complex"
+  },
+  {
+    "model": "gemini-2.5-pro",
+    "dataset": "iris",
+    "generation_time": 23.681037187576294,
+    "code_length": 2824,
+    "timestamp": "2025-11-13T12:58:44.516826",
+    "accuracy_mean": 0.9199999999999999,
+    "accuracy_std": 0.039999999999999994,
+    "accuracy_min": 0.8666666666666667,
+    "accuracy_max": 0.9666666666666667,
+    "model_used": "SVC",
+    "pipeline_steps": [
+      "preprocessor",
+      "feature_engineering",
+      "model"
+    ],
+    "success": true,
+    "detected_models": [
+      "Support Vector Machine"
+    ],
+    "complexity": "simple"
+  }
+]
